@@ -5,6 +5,8 @@
 #include <QKeyEvent>
 #include <QShowEvent>
 
+#include <QPainter>
+
 #include <QDebug>
 
 #include <iostream>
@@ -36,7 +38,7 @@ MainWindow::MainWindow() :
 
 
     liveviewTimer = new QTimer(this);
-    liveviewTimer->setInterval(200);
+    liveviewTimer->setInterval(50);
     connect(liveviewTimer, SIGNAL(timeout()), this, SLOT(capturePreview()));
 }
 
@@ -198,6 +200,15 @@ void MainWindow::capturePreview()
 
     qInfo() << "Preview captured";
 
+    unsigned long int size;
+    const char *data;
+
+    gp_file_get_data_and_size(file, &data, &size);
+
+    preview.loadFromData((uchar*) data, size, "JPG");
+
+    update();
+
     gp_file_free(file);
 }
 
@@ -241,4 +252,16 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     default:
         QOpenGLWindow::keyPressEvent(event);
     }
+}
+
+void MainWindow::resizeGL(int w, int h)
+{
+
+}
+
+void MainWindow::paintGL()
+{
+    QPainter p(this);
+
+    p.drawPixmap(0, 0, 1280, 720, preview);
 }

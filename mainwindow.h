@@ -28,6 +28,9 @@ protected:
 
     int toggleWidget(QString widgetName, int toggleValue);
 
+    void paintGL() Q_DECL_OVERRIDE;
+    void resizeGL(int w, int h) Q_DECL_OVERRIDE;
+
 private:
     QTimer*                 lookupCameraTimer;
     QTimer*                 liveviewTimer;
@@ -40,6 +43,8 @@ private:
     CameraWidget*           cameraWindow;
 
     QMap<QString, CameraWidget*> widgets;
+
+    QPixmap preview;
 public slots:
     void lookupCamera();
     void capturePreview();
