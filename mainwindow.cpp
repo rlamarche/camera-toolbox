@@ -263,5 +263,5 @@ void MainWindow::paintGL()
 {
     QPainter p(this);
 
-    p.drawPixmap(0, 0, 1280, 720, preview);
+    p.drawPixmap(0, 0, width(), height(), preview);
 }
