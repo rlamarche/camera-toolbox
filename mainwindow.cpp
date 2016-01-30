@@ -150,7 +150,7 @@ void MainWindow::lookupCamera()
         return;
     }
 
-    //liveviewTimer->start();
+    liveviewTimer->start();
 }
 
 int MainWindow::findWidgets(CameraWidget* widget) {
@@ -195,6 +195,8 @@ void MainWindow::capturePreview()
         gp_file_free(file);
         return;
     }
+
+    qInfo() << "Preview captured";
 
     gp_file_free(file);
 }
