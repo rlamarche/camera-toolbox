@@ -263,5 +263,22 @@ void MainWindow::paintGL()
 {
     QPainter p(this);
 
-    p.drawPixmap(0, 0, width(), height(), preview);
+    float ratio = (float) preview.height() / (float) preview.width();
+
+    float width = (float) preview.width();
+    float height = this->width() * ratio;
+
+    if (height > this->height())
+    {
+        height = (float) this->height();
+        width = height / ratio;
+    }
+
+    int x = (this->width() - (int) width) / 2;
+    int y = (this->height() - (int) height) / 2;
+
+
+
+    p.drawPixmap(x, y, (int) width, (int) height, preview);
+
 }

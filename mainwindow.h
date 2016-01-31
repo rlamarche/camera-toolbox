@@ -23,11 +23,13 @@ public:
     ~MainWindow();
 
 protected:
-    void keyPressEvent(QKeyEvent *event);
     int findWidgets(CameraWidget* widget);
 
     int toggleWidget(QString widgetName, int toggleValue);
 
+
+    // Events
+    void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
     void paintGL() Q_DECL_OVERRIDE;
     void resizeGL(int w, int h) Q_DECL_OVERRIDE;
 
