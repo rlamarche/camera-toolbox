@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "liveviewthread.h"
+#include "camerathread.h"
 
 
 #include <QOpenGLWindow>

@@ -15,13 +15,13 @@ DEFINES += USE_OPENGL USE_EGL IS_RPI USE_OPENMAX
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-        liveviewthread.cpp \
-        liveviewdecoderthread.cpp
+    camerathread.cpp \
+    decoderthread.cpp
 
 
 HEADERS  += mainwindow.h \
-    liveviewthread.h \
-    liveviewdecoderthread.h
+    camerathread.h \
+    decoderthread.h
 
 
 FORMS    +=

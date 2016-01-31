@@ -1,35 +1,76 @@
-#include "liveviewdecoderthread.h"
+#include "camerathread.h"
 
-#include "liveviewthread.h"
+#include "decoderthread.h"
 
-#include <QDebug>
-#include <jpeglib.h>
+#include "jpeglib.h"
 #include <setjmp.h>
 #include <turbojpeg.h>
 
-LiveviewDecoderThread::LiveviewDecoderThread(CameraThread* liveviewThread, QObject *parent) : QThread(parent), m_cameraThread(liveviewThread), m_cameraFile(0)
+#include <QDebug>
+
+CameraThread::CameraThread(GPContext* context, Camera* camera, QObject *parent) : QThread(parent),
+    m_context(context), m_camera(camera)
 {
     m_stop = false;
 }
 
-
-void LiveviewDecoderThread::run()
+void CameraThread::run()
 {
-    qInfo() << "Start liveview decoder thread";
+    m_decoderThread = new DecoderThread(this);
+    m_decoderThread->start();
+
+    qInfo() << "Start liveview thread";
     while (!m_stop) {
-        m_mutex.lock();
-        m_condition.wait(&m_mutex);
-        m_mutex.unlock();
+        //m_mutex.lock();
+        //m_condition.wait(&m_mutex);
+        //m_mutex.unlock();
 
         if (!m_stop) {
-            doDecodePreview();
+            doCapturePreview();
         }
     }
 
-    qInfo() << "Stop liveview decoder thread";
+    qInfo() << "Stop liveview thread";
+    m_decoderThread->stop();
 }
 
-void LiveviewDecoderThread::stop()
+void CameraThread::doCapturePreview()
+{
+    CameraFile *file;
+
+    int ret = gp_file_new(&file);
+    if (ret < GP_OK) {
+        qWarning() << "Unable to create camera file for preview";
+        return;
+    }
+
+    ret = gp_camera_capture_preview(m_camera, file, m_context);
+    if (ret < GP_OK) {
+        qWarning() << "Unable to capture preview";
+        gp_file_free(file);
+        return;
+    }
+
+    unsigned long int size;
+    const char *data;
+
+    gp_file_get_data_and_size(file, &data, &size);
+
+    //QImage image = decodeImageTurbo(data, size);
+    //QImage image = decodeImage(data, size);
+    //emit imageAvailable(image);
+    if (!m_decoderThread->decodePreview(file))
+    {
+        gp_file_free(file);
+    }
+
+    //m_preview.loadFromData((uchar*) data, size, "JPG");
+    //emit previewAvailable(m_preview);
+
+
+}
+
+void CameraThread::stop()
 {
     m_mutex.lock();
     m_stop = true;
@@ -37,27 +78,14 @@ void LiveviewDecoderThread::stop()
     m_mutex.unlock();
 }
 
-void LiveviewDecoderThread::doDecodePreview()
+void CameraThread::capturePreview()
 {
-    unsigned long int size;
-    const char *data;
-
-    gp_file_get_data_and_size(m_cameraFile, &data, &size);
-
-    QImage image = decodeImageTurbo(data, size);
-    gp_file_free(m_cameraFile);
-    m_cameraFile = 0;
-
-    m_cameraThread->previewDecoded(image);
+    m_condition.wakeOne();
 }
 
-bool LiveviewDecoderThread::decodePreview(CameraFile* cameraFile)
+void CameraThread::previewDecoded(QImage image)
 {
-    if (m_mutex.tryLock()) {
-        m_cameraFile = cameraFile;
-        m_condition.wakeOne();
-        m_mutex.unlock();
-    }
+    emit imageAvailable(image);
 }
 
 struct my_error_mgr {
@@ -86,11 +114,7 @@ my_error_exit (j_common_ptr cinfo)
   longjmp(myerr->setjmp_buffer, 1);
 }
 
-
-
-
-
-QImage LiveviewDecoderThread::decodeImage(const char *data, unsigned long size)
+QImage CameraThread::decodeImage(const char *data, unsigned long size)
 {
     /* This struct contains the JPEG decompression parameters and pointers to
      * working space (which is allocated as needed by the JPEG library).
@@ -201,16 +225,18 @@ QImage LiveviewDecoderThread::decodeImage(const char *data, unsigned long size)
     return image;
 }
 
-QImage LiveviewDecoderThread::decodeImageTurbo(const char *data, unsigned long size)
+QImage CameraThread::decodeImageTurbo(const char *data, unsigned long size)
 {
     int jpegSubsamp, width, height;
 
     tjhandle _jpegDecompressor = tjInitDecompress();
+
     tjDecompressHeader2(_jpegDecompressor, (uchar*) data, size, &width, &height, &jpegSubsamp);
 
     QImage image = QImage(width, height, QImage::Format_RGB888);
 
     tjDecompress2(_jpegDecompressor, (uchar*) data, size, image.bits(), width, 0/*pitch*/, height, TJPF_RGB, TJFLAG_FASTDCT);
+
     tjDestroy(_jpegDecompressor);
 
     return image;

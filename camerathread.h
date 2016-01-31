@@ -11,11 +11,11 @@
 #include <gphoto2/gphoto2-camera.h>
 #include <gphoto2/gphoto2-context.h>
 
-class LiveviewDecoderThread;
+class DecoderThread;
 
 class CameraThread : public QThread
 {
-    friend class LiveviewDecoderThread;
+    friend class DecoderThread;
 
     Q_OBJECT
 public:
@@ -43,7 +43,7 @@ private:
     QPixmap m_preview;
 
     // Decoder
-    LiveviewDecoderThread* m_decoderThread;
+    DecoderThread* m_decoderThread;
 signals:
     void previewAvailable(QPixmap preview);
     void imageAvailable(QImage preview);

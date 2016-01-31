@@ -10,11 +10,11 @@
 
 class CameraThread;
 
-class LiveviewDecoderThread : public QThread
+class DecoderThread : public QThread
 {
     Q_OBJECT
 public:
-    explicit LiveviewDecoderThread(CameraThread* m_cameraThread, QObject *parent = 0);
+    explicit DecoderThread(CameraThread* m_cameraThread, QObject *parent = 0);
     void stop();
     bool decodePreview(CameraFile* cameraFile);
 protected:
