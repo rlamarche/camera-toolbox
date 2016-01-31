@@ -6,61 +6,67 @@
 #include <QShowEvent>
 
 #include <QPainter>
+#include <QTime>
 
 #include <QDebug>
 
 #include <iostream>
 
-using namespace std;
-
 MainWindow::MainWindow() :
-    QOpenGLWindow()
+    QOpenGLWindow(), m_liveviewTimer(0), m_liveviewThread(0), m_camera(0), fps(0)
 {
     // Create gphoto context
-    context = gp_context_new();
+    m_context = gp_context_new();
 
     // Load abilities list
-    gp_abilities_list_new    (&abilitieslist);
-    gp_abilities_list_load(abilitieslist, context);
+    gp_abilities_list_new    (&m_abilitieslist);
+    gp_abilities_list_load(m_abilitieslist, m_context);
 
     // Load port info list
     // TODO be able to do it again later ?
-    gp_port_info_list_new(&portinfolist);
-    gp_port_info_list_load(portinfolist);
+    gp_port_info_list_new(&m_portInfoList);
+    gp_port_info_list_load(m_portInfoList);
 
-    // Init to 0
-    camera = 0;
+    m_lookupCameraTimer = new QTimer(this);
+    m_lookupCameraTimer->setInterval(1000);
+    connect(m_lookupCameraTimer, SIGNAL(timeout()), this, SLOT(lookupCamera()));
+    m_lookupCameraTimer->start();
 
-    lookupCameraTimer = new QTimer(this);
-    lookupCameraTimer->setInterval(1000);
-    connect(lookupCameraTimer, SIGNAL(timeout()), this, SLOT(lookupCamera()));
-    lookupCameraTimer->start();
-
-
-    liveviewTimer = new QTimer(this);
-    liveviewTimer->setInterval(50);
-    connect(liveviewTimer, SIGNAL(timeout()), this, SLOT(capturePreview()));
+    m_overscanLeft = -32;
+    m_overscanRight = -32;
+    m_overscanTop = -32;
+    m_overscanBottom = -32;
 }
 
 MainWindow::~MainWindow()
 {
-    if (camera)
-    {
-        gp_camera_free(camera);
+    if (m_liveviewTimer) {
+        m_liveviewTimer->stop();
+    }
+    if (m_liveviewThread) {
+        m_liveviewThread->stop();
+        m_liveviewThread->wait();
     }
 
-    gp_abilities_list_free(abilitieslist);
-    gp_context_unref(context);
+    m_lookupCameraTimer->stop();
+    if (m_camera) {
+        setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 0);
+        updateConfig();
+        gp_camera_free(m_camera);
+    }
+
+    gp_abilities_list_free(m_abilitieslist);
+    gp_context_unref(m_context);
 }
 
 void MainWindow::lookupCamera()
 {
-    qInfo() << "Lookup camera";
+    update();
 
     // Autodetect camera
     CameraList *list;
     gp_list_new (&list);
-    int count = gp_camera_autodetect(list, context);
+    int count = gp_camera_autodetect(list, m_context);
 
 
 
@@ -74,10 +80,10 @@ void MainWindow::lookupCamera()
     // Open first camera
     int cameraNumber = 0, ret;
 
-    if (camera) {
-        gp_camera_free(camera);
+    if (m_camera) {
+        gp_camera_free(m_camera);
     }
-    gp_camera_new(&camera);
+    gp_camera_new(&m_camera);
     const char *modelNamePtr = NULL, *portNamePtr = NULL;
     CameraAbilities cameraAbilities;
 
@@ -91,26 +97,26 @@ void MainWindow::lookupCamera()
 
     qInfo() << "Open camera :" << modelName << "at port" << portName;
 
-    int model = gp_abilities_list_lookup_model(abilitieslist, modelName.toStdString().c_str());
+    int model = gp_abilities_list_lookup_model(m_abilitieslist, modelName.toStdString().c_str());
     if (model < GP_OK) {
         qWarning() << "Model not supported (yet)" ;
         return;
     }
 
-    ret = gp_abilities_list_get_abilities(abilitieslist, model, &cameraAbilities);
+    ret = gp_abilities_list_get_abilities(m_abilitieslist, model, &cameraAbilities);
     if (ret < GP_OK) {
         qWarning() << "Unable to get abilities list";
         return;
     }
 
-    ret = gp_camera_set_abilities(camera, cameraAbilities);
+    ret = gp_camera_set_abilities(m_camera, cameraAbilities);
     if (ret < GP_OK) {
         qWarning() << "Unable to set abilities on camera";
         return;
     }
 
     // Then associate the camera with the specified port
-    int port = gp_port_info_list_lookup_path(portinfolist, portName.toStdString().c_str());
+    int port = gp_port_info_list_lookup_path(m_portInfoList, portName.toStdString().c_str());
 
     if (port < GP_OK) {
         qWarning() << "Unable to lookup port";
@@ -118,25 +124,25 @@ void MainWindow::lookupCamera()
     }
 
     GPPortInfo portInfo;
-    ret = gp_port_info_list_get_info (portinfolist, port, &portInfo);
+    ret = gp_port_info_list_get_info (m_portInfoList, port, &portInfo);
     if (ret < GP_OK) {
         qWarning() << "Unable to get info on port";
         return;
     }
 
-    ret = gp_camera_set_port_info (camera, portInfo);
+    ret = gp_camera_set_port_info (m_camera, portInfo);
     if (ret < GP_OK) {
         qWarning() << "Unable to set port info on camera";
         return;
     }
 
-    ret = gp_camera_get_config(camera, &cameraWindow, context);
+    ret = gp_camera_get_config(m_camera, &m_cameraWindow, m_context);
     if (ret < GP_OK) {
         qWarning() << "Unable to get root widget";
         return;
     }
 
-    ret = findWidgets(cameraWindow);
+    ret = findWidgets(m_cameraWindow);
     if (ret < GP_OK) {
         qWarning() << "Unable to find widgets";
         return;
@@ -144,15 +150,28 @@ void MainWindow::lookupCamera()
 
     qInfo() << "Camera successfully opened";
 
-    lookupCameraTimer->stop();
+    m_lookupCameraTimer->stop();
 
-    ret = toggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 1);
+    ret = setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 1);
     if (ret < GP_OK) {
         qWarning() << "Unable to set viewfinder";
         return;
     }
+    ret = updateConfig();
+    if (ret < GP_OK) {
+        qWarning() << "Unable to update config";
+        return;
+    }
 
-    liveviewTimer->start();
+    m_liveviewThread = new CameraThread(m_context, m_camera, this);
+    m_liveviewThread->start();
+
+    m_liveviewTimer = new QTimer(this);
+    m_liveviewTimer->setInterval(40);
+    //connect(m_liveviewTimer, SIGNAL(timeout()), m_liveviewThread, SLOT(capturePreview()));
+    connect(m_liveviewThread, SIGNAL(previewAvailable(QPixmap)), this, SLOT(showPreview(QPixmap)));
+    connect(m_liveviewThread, SIGNAL(imageAvailable(QImage)), this, SLOT(showImage(QImage)));
+    m_liveviewTimer->start();
 }
 
 int MainWindow::findWidgets(CameraWidget* widget) {
@@ -170,7 +189,7 @@ int MainWindow::findWidgets(CameraWidget* widget) {
         gp_widget_get_name(child, &widgetName);
         qDebug() << "Found widget" << widgetName;
 
-        widgets[QString(widgetName)] = child;
+        m_widgets[QString(widgetName)] = child;
 
         ret = findWidgets(child);
         if (ret < GP_OK) {
@@ -181,55 +200,51 @@ int MainWindow::findWidgets(CameraWidget* widget) {
     return GP_OK;
 }
 
-void MainWindow::capturePreview()
+void MainWindow::showPreview(QPixmap preview)
 {
-    CameraFile *file;
+    static QTime time;
+    static int frameCount = 0;
 
-    int ret = gp_file_new(&file);
-    if (ret < GP_OK) {
-        qWarning() << "Unable to create camera file for preview";
-        return;
+    frameCount ++;
+
+    if (frameCount > 0 && frameCount % 10 == 0) {
+        frameCount = 0;
+        fps = 10.0f / time.elapsed() * 1000.0f;
+        time.restart();
     }
 
-    ret = gp_camera_capture_preview(camera, file, context);
-    if (ret < GP_OK) {
-        qWarning() << "Unable to capture preview";
-        gp_file_free(file);
-        return;
-    }
-
-    qInfo() << "Preview captured";
-
-    unsigned long int size;
-    const char *data;
-
-    gp_file_get_data_and_size(file, &data, &size);
-
-    preview.loadFromData((uchar*) data, size, "JPG");
-
+    m_preview = preview;
     update();
-
-    gp_file_free(file);
 }
 
-int MainWindow::toggleWidget(QString widgetName, int toggleValue)
+void MainWindow::showImage(QImage image)
 {
-    CameraWidget* widget = widgets[widgetName];
+    static QTime time;
+    static int frameCount = 0;
+
+    frameCount ++;
+
+    if (frameCount > 0 && frameCount % 10 == 0) {
+        frameCount = 0;
+        fps = 10.0f / time.elapsed() * 1000.0f;
+        time.restart();
+    }
+
+    m_image = image;
+    update();
+}
+
+int MainWindow::setToggleWidget(QString widgetName, int toggleValue)
+{
+    CameraWidget* widget = m_widgets[widgetName];
 
     if (widget)
     {
         int ret = gp_widget_set_value(widget, &toggleValue);
         if (ret < GP_OK) {
-            qWarning() << "Unable to set value to widget :" << widgetName;
-            return ret;
+            qWarning() << "Unable to toggle widget :" << widgetName;
         }
-
-        ret = gp_camera_set_config(camera, cameraWindow, context);
-        if (ret < GP_OK) {
-            qWarning() << "Unable to set camera config :" << widgetName;
-            return ret;
-        }
-
+        return ret;
     } else {
         qWarning() << "Widget not found :" << widgetName;
         return -1;
@@ -238,15 +253,39 @@ int MainWindow::toggleWidget(QString widgetName, int toggleValue)
     return GP_OK;
 }
 
+int MainWindow::setRangeWidget(QString widgetName, float rangeValue)
+{
+    CameraWidget* widget = m_widgets[widgetName];
+
+    if (widget)
+    {
+        int ret = gp_widget_set_value(widget, &rangeValue);
+        if (ret < GP_OK) {
+            qWarning() << "Unable to set range value to widget :" << widgetName;
+        }
+
+        return ret;
+    } else {
+        qWarning() << "Widget not found :" << widgetName;
+        return -1;
+    }
+
+    return GP_OK;
+}
+
+int MainWindow::updateConfig()
+{
+    int ret = gp_camera_set_config(m_camera, m_cameraWindow, m_context);
+    if (ret < GP_OK) {
+        qWarning() << "Unable to update camera config";
+    }
+    return ret;
+}
+
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key()) {
     case Qt::Key_Escape:
-        lookupCameraTimer->stop();
-        liveviewTimer->stop();
-        if (camera) {
-            toggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 0);
-        }
         this->close();
         break;
     default:
@@ -263,22 +302,28 @@ void MainWindow::paintGL()
 {
     QPainter p(this);
 
-    float ratio = (float) preview.height() / (float) preview.width();
+    float ratio = (float) m_image.height() / (float) m_image.width();
 
-    float width = (float) preview.width();
-    float height = this->width() * ratio;
+    float width = (float) m_image.width();
+    float height = (this->width() + m_overscanLeft + m_overscanRight) * ratio;
 
-    if (height > this->height())
+    if (height > (this->height() + m_overscanBottom + m_overscanTop))
     {
-        height = (float) this->height();
+        height = (float) (this->height() + m_overscanBottom + m_overscanTop);
         width = height / ratio;
     }
 
-    int x = (this->width() - (int) width) / 2;
-    int y = (this->height() - (int) height) / 2;
+    int x = ((this->width() + m_overscanLeft + m_overscanRight) - (int) width) / 2 - m_overscanLeft;
+    int y = ((this->height() + m_overscanBottom + m_overscanTop) - (int) height) / 2 - m_overscanTop;
 
 
+    //p.drawPixmap(x, y, (int) width, (int) height, m_preview);
+    p.drawImage(QRect(x, y, (int) width, (int) height), m_image);
+    //p.drawImage(QRect(0, 0, m_image.width(), m_image.height()), m_image);
 
-    p.drawPixmap(x, y, (int) width, (int) height, preview);
+    p.setPen(QColor(255, 255, 255));
+    //p.drawText(QPointF(0, 0), QString("FPS : %1").arg(fps));
+    p.drawText(0 - m_overscanLeft, this->height() + m_overscanBottom, QString("FPS : %1").arg(fps));
+   // p.drawText(0, 0, this->width(), this->height(), Qt::AlignCenter, QString("Hello, World"));
 
 }

@@ -1,6 +1,9 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "liveviewthread.h"
+
+
 #include <QOpenGLWindow>
 #include <QMap>
 
@@ -25,8 +28,9 @@ public:
 protected:
     int findWidgets(CameraWidget* widget);
 
-    int toggleWidget(QString widgetName, int toggleValue);
-
+    int setToggleWidget(QString widgetName, int toggleValue);
+    int setRangeWidget(QString widgetName, float rangeValue);
+    int updateConfig();
 
     // Events
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
@@ -34,22 +38,37 @@ protected:
     void resizeGL(int w, int h) Q_DECL_OVERRIDE;
 
 private:
-    QTimer*                 lookupCameraTimer;
-    QTimer*                 liveviewTimer;
+    // Timers
+    QTimer*                 m_lookupCameraTimer;
+    QTimer*                 m_liveviewTimer;
 
-    GPContext*              context;
-    CameraAbilitiesList*    abilitieslist;
-    GPPortInfoList*         portinfolist;
+    // Threads
+    CameraThread* m_liveviewThread;
 
-    Camera*                 camera;
-    CameraWidget*           cameraWindow;
+    // GPhoto context
+    GPContext*              m_context;
+    CameraAbilitiesList*    m_abilitieslist;
+    GPPortInfoList*         m_portInfoList;
 
-    QMap<QString, CameraWidget*> widgets;
+    Camera*                 m_camera;
+    CameraWidget*           m_cameraWindow;
 
-    QPixmap preview;
+    QMap<QString, CameraWidget*> m_widgets;
+
+    // Data
+    int m_overscanLeft;
+    int m_overscanRight;
+    int m_overscanTop;
+    int m_overscanBottom;
+
+    QPixmap m_preview;
+    QImage m_image;
+    float fps;
+
 public slots:
+    void showPreview(QPixmap preview);
+    void showImage(QImage image);
     void lookupCamera();
-    void capturePreview();
 };
 
 #endif // MAINWINDOW_H
