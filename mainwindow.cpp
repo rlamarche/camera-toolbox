@@ -13,29 +13,15 @@
 #include <iostream>
 
 MainWindow::MainWindow() :
-    QOpenGLWindow(), m_liveviewTimer(0), m_liveviewThread(0), m_camera(0), fps(0)
+    QOpenGLWindow(), m_liveviewTimer(0), m_cameraThread(0), fps(0)
 {
-    // Create gphoto context
-    m_context = gp_context_new();
-
-    // Load abilities list
-    gp_abilities_list_new    (&m_abilitieslist);
-    gp_abilities_list_load(m_abilitieslist, m_context);
-
-    // Load port info list
-    // TODO be able to do it again later ?
-    gp_port_info_list_new(&m_portInfoList);
-    gp_port_info_list_load(m_portInfoList);
-
-    m_lookupCameraTimer = new QTimer(this);
-    m_lookupCameraTimer->setInterval(1000);
-    connect(m_lookupCameraTimer, SIGNAL(timeout()), this, SLOT(lookupCamera()));
-    m_lookupCameraTimer->start();
-
     m_overscanLeft = -32;
     m_overscanRight = -32;
     m_overscanTop = -32;
     m_overscanBottom = -32;
+
+    connect(&m_cameraThread, SIGNAL(imageAvailable(QImage)), this, SLOT(showImage(QImage)));
+    m_cameraThread.start();
 }
 
 MainWindow::~MainWindow()
@@ -43,161 +29,10 @@ MainWindow::~MainWindow()
     if (m_liveviewTimer) {
         m_liveviewTimer->stop();
     }
-    if (m_liveviewThread) {
-        m_liveviewThread->stop();
-        m_liveviewThread->wait();
+    if (m_cameraThread.isRunning()) {
+        m_cameraThread.stop();
+        m_cameraThread.wait();
     }
-
-    m_lookupCameraTimer->stop();
-    if (m_camera) {
-        setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 0);
-        updateConfig();
-        gp_camera_free(m_camera);
-    }
-
-    gp_abilities_list_free(m_abilitieslist);
-    gp_context_unref(m_context);
-}
-
-void MainWindow::lookupCamera()
-{
-    update();
-
-    // Autodetect camera
-    CameraList *list;
-    gp_list_new (&list);
-    int count = gp_camera_autodetect(list, m_context);
-
-
-
-    if (count == 0)
-    {
-        return;
-    }
-
-    qInfo() << count << "cameras detected.";
-
-    // Open first camera
-    int cameraNumber = 0, ret;
-
-    if (m_camera) {
-        gp_camera_free(m_camera);
-    }
-    gp_camera_new(&m_camera);
-    const char *modelNamePtr = NULL, *portNamePtr = NULL;
-    CameraAbilities cameraAbilities;
-
-    gp_list_get_name  (list, cameraNumber, &modelNamePtr);
-    gp_list_get_value (list, cameraNumber, &portNamePtr);
-
-    QString modelName(modelNamePtr);
-    QString portName(portNamePtr);
-
-    gp_list_free(list);
-
-    qInfo() << "Open camera :" << modelName << "at port" << portName;
-
-    int model = gp_abilities_list_lookup_model(m_abilitieslist, modelName.toStdString().c_str());
-    if (model < GP_OK) {
-        qWarning() << "Model not supported (yet)" ;
-        return;
-    }
-
-    ret = gp_abilities_list_get_abilities(m_abilitieslist, model, &cameraAbilities);
-    if (ret < GP_OK) {
-        qWarning() << "Unable to get abilities list";
-        return;
-    }
-
-    ret = gp_camera_set_abilities(m_camera, cameraAbilities);
-    if (ret < GP_OK) {
-        qWarning() << "Unable to set abilities on camera";
-        return;
-    }
-
-    // Then associate the camera with the specified port
-    int port = gp_port_info_list_lookup_path(m_portInfoList, portName.toStdString().c_str());
-
-    if (port < GP_OK) {
-        qWarning() << "Unable to lookup port";
-        return;
-    }
-
-    GPPortInfo portInfo;
-    ret = gp_port_info_list_get_info (m_portInfoList, port, &portInfo);
-    if (ret < GP_OK) {
-        qWarning() << "Unable to get info on port";
-        return;
-    }
-
-    ret = gp_camera_set_port_info (m_camera, portInfo);
-    if (ret < GP_OK) {
-        qWarning() << "Unable to set port info on camera";
-        return;
-    }
-
-    ret = gp_camera_get_config(m_camera, &m_cameraWindow, m_context);
-    if (ret < GP_OK) {
-        qWarning() << "Unable to get root widget";
-        return;
-    }
-
-    ret = findWidgets(m_cameraWindow);
-    if (ret < GP_OK) {
-        qWarning() << "Unable to find widgets";
-        return;
-    }
-
-    qInfo() << "Camera successfully opened";
-
-    m_lookupCameraTimer->stop();
-
-    ret = setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 1);
-    if (ret < GP_OK) {
-        qWarning() << "Unable to set viewfinder";
-        return;
-    }
-    ret = updateConfig();
-    if (ret < GP_OK) {
-        qWarning() << "Unable to update config";
-        return;
-    }
-
-    m_liveviewThread = new CameraThread(m_context, m_camera, this);
-    m_liveviewThread->start();
-
-    m_liveviewTimer = new QTimer(this);
-    m_liveviewTimer->setInterval(40);
-    //connect(m_liveviewTimer, SIGNAL(timeout()), m_liveviewThread, SLOT(capturePreview()));
-    connect(m_liveviewThread, SIGNAL(previewAvailable(QPixmap)), this, SLOT(showPreview(QPixmap)));
-    connect(m_liveviewThread, SIGNAL(imageAvailable(QImage)), this, SLOT(showImage(QImage)));
-    m_liveviewTimer->start();
-}
-
-int MainWindow::findWidgets(CameraWidget* widget) {
-    int n = gp_widget_count_children(widget);
-    CameraWidget* child;
-    const char* widgetName;
-
-    for (int i = 0; i < n; i ++) {
-
-        int ret = gp_widget_get_child(widget, i, &child);
-        if (ret < GP_OK) {
-            return ret;
-        }
-
-        gp_widget_get_name(child, &widgetName);
-        qDebug() << "Found widget" << widgetName;
-
-        m_widgets[QString(widgetName)] = child;
-
-        ret = findWidgets(child);
-        if (ret < GP_OK) {
-            return ret;
-        }
-    }
-
-    return GP_OK;
 }
 
 void MainWindow::showPreview(QPixmap preview)
@@ -233,7 +68,7 @@ void MainWindow::showImage(QImage image)
     m_image = image;
     update();
 }
-
+/*
 int MainWindow::setToggleWidget(QString widgetName, int toggleValue)
 {
     CameraWidget* widget = m_widgets[widgetName];
@@ -281,12 +116,17 @@ int MainWindow::updateConfig()
     }
     return ret;
 }
+*/
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key()) {
     case Qt::Key_Escape:
         this->close();
+        break;
+
+    case Qt::Key_Enter:
+        m_cameraThread.executeCommand(CameraThread::CommandToggleLiveview);
         break;
     default:
         QOpenGLWindow::keyPressEvent(event);

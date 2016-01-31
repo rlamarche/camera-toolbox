@@ -5,33 +5,266 @@
 #include "jpeglib.h"
 #include <setjmp.h>
 #include <turbojpeg.h>
+#include <gphoto2/gphoto2-port-info-list.h>
 
 #include <QDebug>
 
-CameraThread::CameraThread(GPContext* context, Camera* camera, QObject *parent) : QThread(parent),
-    m_context(context), m_camera(camera)
+CameraThread::CameraThread(QObject *parent) : QThread(parent),
+    m_context(0), m_abilitiesList(0), m_portInfoList(0), m_camera(0), m_cameraWindow(0), m_stop(false), m_liveview(false), m_decoderThread(0)
 {
-    m_stop = false;
+
 }
 
-void CameraThread::run()
+void CameraThread::init()
 {
     m_decoderThread = new DecoderThread(this);
     m_decoderThread->start();
 
-    qInfo() << "Start liveview thread";
-    while (!m_stop) {
-        //m_mutex.lock();
-        //m_condition.wait(&m_mutex);
-        //m_mutex.unlock();
+    // Create gphoto context
+    m_context = gp_context_new();
 
-        if (!m_stop) {
-            doCapturePreview();
+    // Load abilities list
+    gp_abilities_list_new    (&m_abilitiesList);
+    gp_abilities_list_load(m_abilitiesList, m_context);
+
+    // Load port info list
+    // TODO be able to do it again later ?
+    gp_port_info_list_new(&m_portInfoList);
+    gp_port_info_list_load(m_portInfoList);
+}
+
+void CameraThread::shutdown()
+{
+    m_decoderThread->stop();
+    m_decoderThread->wait();
+
+    if (m_camera) {
+        // TODO setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 0);
+        // TODO updateConfig();
+        gp_camera_free(m_camera);
+    }
+
+    gp_abilities_list_free(m_abilitiesList);
+    gp_context_unref(m_context);
+}
+
+bool CameraThread::lookupCamera()
+{
+    // Autodetect camera
+    CameraList *cameraList;
+    gp_list_new (&cameraList);
+    int count = gp_camera_autodetect(cameraList, m_context);
+
+    if (count == 0)
+    {
+        return false;
+    }
+
+    qInfo() << count << "cameras detected.";
+
+    // Open first camera
+    int cameraNumber = 0, ret;
+
+    // If previous camera, free it
+    if (m_camera) {
+        gp_camera_free(m_camera);
+    }
+    gp_camera_new(&m_camera);
+    const char *modelNamePtr = NULL, *portNamePtr = NULL;
+
+    gp_list_get_name  (cameraList, cameraNumber, &modelNamePtr);
+    gp_list_get_value (cameraList, cameraNumber, &portNamePtr);
+
+    m_cameraModel = QString(modelNamePtr);
+    m_cameraPort = QString(portNamePtr);
+
+    gp_list_free(cameraList);
+
+    qInfo() << "Open camera :" << m_cameraModel << "at port" << m_cameraPort;
+
+    int model = gp_abilities_list_lookup_model(m_abilitiesList, m_cameraModel.toStdString().c_str());
+    if (model < GP_OK) {
+        qWarning() << "Model not supported (yet)" ;
+        return false;
+    }
+
+    ret = gp_abilities_list_get_abilities(m_abilitiesList, model, &m_cameraAbilities);
+    if (ret < GP_OK) {
+        qWarning() << "Unable to get abilities list";
+        return false;
+    }
+
+    ret = gp_camera_set_abilities(m_camera, m_cameraAbilities);
+    if (ret < GP_OK) {
+        qWarning() << "Unable to set abilities on camera";
+        return false;
+    }
+
+    // Then associate the camera with the specified port
+    int port = gp_port_info_list_lookup_path(m_portInfoList, m_cameraPort.toStdString().c_str());
+
+    if (port < GP_OK) {
+        qWarning() << "Unable to lookup port";
+        return false;
+    }
+
+    GPPortInfo portInfo;
+    ret = gp_port_info_list_get_info (m_portInfoList, port, &portInfo);
+    if (ret < GP_OK) {
+        qWarning() << "Unable to get info on port";
+        return false;
+    }
+
+    ret = gp_camera_set_port_info (m_camera, portInfo);
+    if (ret < GP_OK) {
+        qWarning() << "Unable to set port info on camera";
+        return false;
+    }
+
+    ret = gp_camera_get_config(m_camera, &m_cameraWindow, m_context);
+    if (ret < GP_OK) {
+        qWarning() << "Unable to get root widget";
+        return false;
+    }
+
+    ret = lookupWidgets(m_cameraWindow);
+    if (ret < GP_OK) {
+        qWarning() << "Unable to find widgets";
+        return false;
+    }
+
+    qInfo() << "Camera successfully opened";
+
+    extractCameraCapabilities();
+    refreshCameraSettings();
+
+
+    return true;
+    // TODO
+    /*
+    ret = setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 1);
+    if (ret < GP_OK) {
+        qWarning() << "Unable to set viewfinder";
+        return;
+    }
+    ret = updateConfig();
+    if (ret < GP_OK) {
+        qWarning() << "Unable to update config";
+        return;
+    }
+
+    m_liveviewThread = new CameraThread(m_context, m_camera, this);
+    m_liveviewThread->start();
+
+    m_liveviewTimer = new QTimer(this);
+    m_liveviewTimer->setInterval(40);
+    //connect(m_liveviewTimer, SIGNAL(timeout()), m_liveviewThread, SLOT(capturePreview()));
+    connect(m_liveviewThread, SIGNAL(previewAvailable(QPixmap)), this, SLOT(showPreview(QPixmap)));
+    connect(m_liveviewThread, SIGNAL(imageAvailable(QImage)), this, SLOT(showImage(QImage)));
+    m_liveviewTimer->start();*/
+}
+
+int CameraThread::lookupWidgets(CameraWidget* widget) {
+    int n = gp_widget_count_children(widget);
+    CameraWidget* child;
+    const char* widgetName;
+
+    gp_widget_get_name(widget, &widgetName);
+    qDebug() << "Found widget" << widgetName;
+
+    m_widgets[widgetName] = widget;
+
+    for (int i = 0; i < n; i ++) {
+        int ret = gp_widget_get_child(widget, i, &child);
+        if (ret < GP_OK) {
+            return ret;
+        }
+
+        ret = lookupWidgets(child);
+        if (ret < GP_OK) {
+            return ret;
         }
     }
 
-    qInfo() << "Stop liveview thread";
-    m_decoderThread->stop();
+    return GP_OK;
+}
+
+void CameraThread::extractCameraCapabilities()
+{
+    if (m_widgets.contains(QString(HPIS_CONFIG_KEY_APERTURE))) {
+        m_cameraApertures = extractWidgetChoices(m_widgets[HPIS_CONFIG_KEY_APERTURE]);
+    }
+}
+
+void CameraThread::refreshCameraSettings()
+{
+    char* currentValue;
+
+    if (m_widgets.contains(QString(HPIS_CONFIG_KEY_APERTURE))) {
+
+        gp_widget_get_value(m_widgets[HPIS_CONFIG_KEY_APERTURE], &currentValue);
+        m_cameraAperture = m_cameraApertures.indexOf(QString(currentValue));
+        qInfo() << "Current aperture" << currentValue << "index" << m_cameraAperture;
+    }
+}
+
+QList<QString> CameraThread::extractWidgetChoices(CameraWidget* widget)
+{
+    QList<QString> choices;
+
+    const char* choiceLabel;
+    int n = gp_widget_count_choices(widget);
+
+    for (int i = 0; i < n; i ++) {
+        gp_widget_get_choice(widget, i, &choiceLabel);
+        choices.append(QString(choiceLabel));
+
+        qInfo() << "Found choice :" << QString(choiceLabel);
+    }
+
+    return choices;
+}
+
+void CameraThread::run()
+{
+    qInfo() << "Start camera thread";
+    init();
+
+    while (!m_stop && !lookupCamera()) {
+        msleep(500);
+    }
+
+    Command command;
+    while (!m_stop) {
+        /*
+        if (m_commandQueue.isEmpty())
+        {
+            m_mutex.lock();
+            m_condition.wait(&m_mutex);
+            m_mutex.unlock();
+        }*/
+
+        if (!m_stop && m_liveview) {
+            doCapturePreview();
+        } else if (!m_commandQueue.isEmpty()) {
+            m_mutex.lock();
+            m_condition.wait(&m_mutex);
+            m_mutex.unlock();
+        }
+
+        m_mutex.lock();
+        if (!m_stop && !m_commandQueue.isEmpty()) {
+            command = m_commandQueue.dequeue();
+            qDebug() << "Process command" << command;
+            doCommand(command);
+        }
+        m_mutex.unlock();
+
+
+    }
+
+    shutdown();
+    qInfo() << "Stop camera thread";
 }
 
 void CameraThread::doCapturePreview()
@@ -74,6 +307,15 @@ void CameraThread::stop()
 {
     m_mutex.lock();
     m_stop = true;
+    m_condition.wakeOne();
+    m_mutex.unlock();
+}
+
+void CameraThread::executeCommand(Command command)
+{
+    qDebug() << "Received command" << command;
+    m_mutex.lock();
+    m_commandQueue.append(command);
     m_condition.wakeOne();
     m_mutex.unlock();
 }
@@ -240,4 +482,89 @@ QImage CameraThread::decodeImageTurbo(const char *data, unsigned long size)
     tjDestroy(_jpegDecompressor);
 
     return image;
+}
+
+void CameraThread::doCommand(Command command)
+{
+    int ret;
+    switch (command) {
+    case CommandStartLiveview:
+        ret = setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 1);
+        if (ret == GP_OK) {
+            m_liveview = true;
+        }
+        break;
+
+    case CommandStopLiveview:
+        ret = setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 0);
+        if (ret == GP_OK) {
+            m_liveview = false;
+        }
+        break;
+    case CommandToggleLiveview:
+        if (m_liveview) {
+            ret = setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 0);
+        } else {
+            ret = setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 1);
+        }
+        if (ret == GP_OK) {
+            m_liveview = !m_liveview;
+        }
+        break;
+
+    default: break;
+    }
+
+    updateConfig();
+}
+
+
+
+
+int CameraThread::setToggleWidget(QString widgetName, int toggleValue)
+{
+    CameraWidget* widget = m_widgets[widgetName];
+
+    if (widget)
+    {
+        int ret = gp_widget_set_value(widget, &toggleValue);
+        if (ret < GP_OK) {
+            qWarning() << "Unable to toggle widget :" << widgetName;
+        }
+        return ret;
+    } else {
+        qWarning() << "Widget not found :" << widgetName;
+        return -1;
+    }
+
+    return GP_OK;
+}
+
+int CameraThread::setRangeWidget(QString widgetName, float rangeValue)
+{
+    CameraWidget* widget = m_widgets[widgetName];
+
+    if (widget)
+    {
+        int ret = gp_widget_set_value(widget, &rangeValue);
+        if (ret < GP_OK) {
+            qWarning() << "Unable to set range value to widget :" << widgetName;
+        }
+
+        return ret;
+    } else {
+        qWarning() << "Widget not found :" << widgetName;
+        return -1;
+    }
+
+    return GP_OK;
+}
+
+int CameraThread::updateConfig()
+{
+    int ret = gp_camera_set_config(m_camera, m_cameraWindow, m_context);
+    if (ret < GP_OK) {
+        qWarning() << "Unable to update camera config";
+    }
+    return ret;
 }

@@ -11,7 +11,6 @@
 #include <gphoto2/gphoto2-context.h>
 #include <gphoto2/gphoto2-port-info-list.h>
 
-#define HPIS_CONFIG_KEY_VIEWFINDER "viewfinder"
 
 namespace Ui {
 class MainWindow;
@@ -28,9 +27,10 @@ public:
 protected:
     int findWidgets(CameraWidget* widget);
 
+    /*
     int setToggleWidget(QString widgetName, int toggleValue);
     int setRangeWidget(QString widgetName, float rangeValue);
-    int updateConfig();
+    int updateConfig();*/
 
     // Events
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
@@ -43,17 +43,7 @@ private:
     QTimer*                 m_liveviewTimer;
 
     // Threads
-    CameraThread* m_liveviewThread;
-
-    // GPhoto context
-    GPContext*              m_context;
-    CameraAbilitiesList*    m_abilitieslist;
-    GPPortInfoList*         m_portInfoList;
-
-    Camera*                 m_camera;
-    CameraWidget*           m_cameraWindow;
-
-    QMap<QString, CameraWidget*> m_widgets;
+    CameraThread m_cameraThread;
 
     // Data
     int m_overscanLeft;
@@ -68,7 +58,7 @@ private:
 public slots:
     void showPreview(QPixmap preview);
     void showImage(QImage image);
-    void lookupCamera();
+    //void lookupCamera();
 };
 
 #endif // MAINWINDOW_H
