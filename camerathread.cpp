@@ -9,8 +9,12 @@
 
 #include <QDebug>
 
+QString
+hpis_gp_port_result_as_string (int result);
+
 CameraThread::CameraThread(QObject *parent) : QThread(parent),
-    m_context(0), m_abilitiesList(0), m_portInfoList(0), m_camera(0), m_cameraWindow(0), m_stop(false), m_liveview(false), m_decoderThread(0)
+    m_context(0), m_abilitiesList(0), m_portInfoList(0), m_camera(0), m_cameraWindow(0),
+    m_stop(false), m_liveview(false), m_recording(false), m_decoderThread(0)
 {
 
 }
@@ -194,6 +198,9 @@ void CameraThread::extractCameraCapabilities()
     if (m_widgets.contains(QString(HPIS_CONFIG_KEY_APERTURE))) {
         m_cameraApertures = extractWidgetChoices(m_widgets[HPIS_CONFIG_KEY_APERTURE]);
     }
+    if (m_widgets.contains(QString(HPIS_CONFIG_KEY_SHUTTERSPEED))) {
+        m_cameraShutterSpeeds = extractWidgetChoices(m_widgets[HPIS_CONFIG_KEY_SHUTTERSPEED]);
+    }
 }
 
 void CameraThread::refreshCameraSettings()
@@ -205,6 +212,13 @@ void CameraThread::refreshCameraSettings()
         gp_widget_get_value(m_widgets[HPIS_CONFIG_KEY_APERTURE], &currentValue);
         m_cameraAperture = m_cameraApertures.indexOf(QString(currentValue));
         qInfo() << "Current aperture" << currentValue << "index" << m_cameraAperture;
+    }
+
+    if (m_widgets.contains(QString(HPIS_CONFIG_KEY_SHUTTERSPEED))) {
+
+        gp_widget_get_value(m_widgets[HPIS_CONFIG_KEY_SHUTTERSPEED], &currentValue);
+        m_cameraShutterSpeed = m_cameraShutterSpeeds.indexOf(QString(currentValue));
+        qInfo() << "Current shutter speed" << currentValue << "index" << m_cameraShutterSpeed;
     }
 }
 
@@ -246,7 +260,7 @@ void CameraThread::run()
 
         if (!m_stop && m_liveview) {
             doCapturePreview();
-        } else if (!m_commandQueue.isEmpty()) {
+        } else if (m_commandQueue.isEmpty()) {
             m_mutex.lock();
             m_condition.wait(&m_mutex);
             m_mutex.unlock();
@@ -512,6 +526,55 @@ void CameraThread::doCommand(Command command)
         }
         break;
 
+    case CommandIncreaseAperture:
+        if (m_cameraAperture < m_cameraApertures.length() - 1) {
+            QString newAperture = m_cameraApertures[m_cameraAperture + 1];
+            ret = setRadioWidget(HPIS_CONFIG_KEY_APERTURE, newAperture.toStdString().c_str());
+            if (ret == GP_OK) {
+                m_cameraAperture ++;
+            }
+        }
+        break;
+    case CommandDecreaseAperture:
+        if (m_cameraAperture > 0) {
+            QString newAperture = m_cameraApertures[m_cameraAperture - 1];
+            ret = setRadioWidget(HPIS_CONFIG_KEY_APERTURE, newAperture.toStdString().c_str());
+            if (ret == GP_OK) {
+                m_cameraAperture --;
+            }
+        }
+        break;
+
+    case CommandIncreaseShutterSpeed:
+        if (m_cameraShutterSpeed < m_cameraShutterSpeeds.length() - 1) {
+            QString newShutterSpeed = m_cameraShutterSpeeds[m_cameraShutterSpeed + 1];
+            ret = setRadioWidget(HPIS_CONFIG_KEY_SHUTTERSPEED, newShutterSpeed.toStdString().c_str());
+            if (ret == GP_OK) {
+                m_cameraShutterSpeed ++;
+            }
+        }
+        break;
+    case CommandDecreaseShutterSpeed:
+        if (m_cameraShutterSpeed > 0) {
+            QString newShutterSpeed = m_cameraShutterSpeeds[m_cameraShutterSpeed - 1];
+            ret = setRadioWidget(HPIS_CONFIG_KEY_SHUTTERSPEED, newShutterSpeed.toStdString().c_str());
+            if (ret == GP_OK) {
+                m_cameraShutterSpeed --;
+            }
+        }
+        break;
+
+    case CommandStartMovie:
+        if (m_recording) {
+            ret = setToggleWidget(HPIS_CONFIG_KEY_STOP_MOVIE, 1);
+        } else {
+            ret = setToggleWidget(HPIS_CONFIG_KEY_START_MOVIE, 1);
+        }
+        if (ret == GP_OK) {
+            m_recording = !m_recording;
+        }
+        break;
+
     default: break;
     }
 
@@ -560,11 +623,112 @@ int CameraThread::setRangeWidget(QString widgetName, float rangeValue)
     return GP_OK;
 }
 
+int CameraThread::setRadioWidget(QString widgetName, const char* radioValue)
+{
+    CameraWidget* widget = m_widgets[widgetName];
+
+
+    gp_widget_get_child_by_name (m_cameraWindow, widgetName.toStdString().c_str(), &widget);
+
+    if (widget)
+    {
+        qInfo() << "Setting value :" << radioValue << "to widget :" << widgetName;
+        int ret = gp_widget_set_value(widget, radioValue);
+        if (ret < GP_OK) {
+            qWarning() << "Unable to set radio value to widget :" << hpis_gp_port_result_as_string(ret);
+        }
+
+        return ret;
+    } else {
+        qWarning() << "Widget not found :" << widgetName;
+        return -1;
+    }
+
+    return GP_OK;
+}
+
 int CameraThread::updateConfig()
 {
     int ret = gp_camera_set_config(m_camera, m_cameraWindow, m_context);
     if (ret < GP_OK) {
-        qWarning() << "Unable to update camera config";
+        qWarning() << "Unable to update camera config :" << hpis_gp_port_result_as_string(ret);
     }
     return ret;
+}
+
+QString
+hpis_gp_port_result_as_string (int result)
+{
+    switch (result) {
+    case GP_OK:
+        return QObject::tr("No error");
+    case GP_ERROR:
+        return QObject::tr("Unspecified error");
+    case GP_ERROR_IO:
+        return QObject::tr("I/O problem");
+    case GP_ERROR_BAD_PARAMETERS:
+        return QObject::tr("Bad parameters");
+    case GP_ERROR_NOT_SUPPORTED:
+        return QObject::tr("Unsupported operation");
+    case  GP_ERROR_FIXED_LIMIT_EXCEEDED:
+        return QObject::tr("Fixed limit exceeded");
+    case GP_ERROR_TIMEOUT:
+        return QObject::tr("Timeout reading from or writing to the port");
+    case GP_ERROR_IO_SUPPORTED_SERIAL:
+        return QObject::tr("Serial port not supported");
+    case GP_ERROR_IO_SUPPORTED_USB:
+        return QObject::tr("USB port not supported");
+    case GP_ERROR_UNKNOWN_PORT:
+        return QObject::tr("Unknown port");
+    case GP_ERROR_NO_MEMORY:
+        return QObject::tr("Out of memory");
+    case GP_ERROR_LIBRARY:
+        return QObject::tr("Error loading a library");
+    case GP_ERROR_IO_INIT:
+        return QObject::tr("Error initializing the port");
+    case GP_ERROR_IO_READ:
+        return QObject::tr("Error reading from the port");
+    case GP_ERROR_IO_WRITE:
+        return QObject::tr("Error writing to the port");
+    case GP_ERROR_IO_UPDATE:
+        return QObject::tr("Error updating the port settings");
+    case GP_ERROR_IO_SERIAL_SPEED:
+        return QObject::tr("Error setting the serial port speed");
+    case GP_ERROR_IO_USB_CLEAR_HALT:
+        return QObject::tr("Error clearing a halt condition on the USB port");
+    case GP_ERROR_IO_USB_FIND:
+        return QObject::tr("Could not find the requested device on the USB port");
+    case GP_ERROR_IO_USB_CLAIM:
+        return QObject::tr("Could not claim the USB device");
+    case GP_ERROR_IO_LOCK:
+        return QObject::tr("Could not lock the device");
+    case GP_ERROR_HAL:
+        return QObject::tr("libhal error");
+    case GP_ERROR_CORRUPTED_DATA:
+        return QObject::tr("Corrupted data received");
+    case GP_ERROR_FILE_EXISTS:
+        return QObject::tr("File already exists");
+    case GP_ERROR_MODEL_NOT_FOUND:
+        return QObject::tr("Specified camera model was not found");
+    case GP_ERROR_DIRECTORY_NOT_FOUND:
+        return QObject::tr("Specified directory was not found")        ;
+    case GP_ERROR_FILE_NOT_FOUND:
+        return QObject::tr("Specified directory was not found");
+    case GP_ERROR_DIRECTORY_EXISTS:
+        return QObject::tr("Specified directory already exists");
+    case GP_ERROR_CAMERA_BUSY:
+        return QObject::tr("The camera is already busy");
+    case GP_ERROR_PATH_NOT_ABSOLUTE:
+        return QObject::tr("Path is not absolute");
+    case GP_ERROR_CANCEL:
+        return QObject::tr("Cancellation successful");
+    case GP_ERROR_CAMERA_ERROR:
+        return QObject::tr("Unspecified camera error");
+    case GP_ERROR_OS_FAILURE:
+        return QObject::tr("Unspecified failure of the operating system");
+    case GP_ERROR_NO_SPACE:
+        return QObject::tr("Not enough space");
+    default:
+        return QObject::tr("Unknown error %1").arg(QString().sprintf("%d", result));
+    }
 }

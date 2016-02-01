@@ -15,7 +15,17 @@
 #include <gphoto2/gphoto2-context.h>
 
 #define HPIS_CONFIG_KEY_VIEWFINDER "viewfinder"
-#define HPIS_CONFIG_KEY_APERTURE "f-number"
+#define HPIS_CONFIG_KEY_APERTURE "d1a9"
+//#define HPIS_CONFIG_KEY_APERTURE "5007"
+//#define HPIS_CONFIG_KEY_APERTURE "f-number"
+#define HPIS_CONFIG_KEY_SHUTTERSPEED "d1a8"
+//#define HPIS_CONFIG_KEY_SHUTTERSPEED "500d"
+//#define HPIS_CONFIG_KEY_SHUTTERSPEED "shutterspeed"
+//#define HPIS_CONFIG_KEY_SHUTTERSPEED "shutterspeed2"
+#define HPIS_CONFIG_KEY_EXPPROGRAM "expprogram"
+
+#define HPIS_CONFIG_KEY_START_MOVIE "movie"
+#define HPIS_CONFIG_KEY_STOP_MOVIE "920b"
 
 class DecoderThread;
 
@@ -30,7 +40,11 @@ public:
         CommandStopLiveview,
         CommandToggleLiveview,
         CommandIncreaseAperture,
-        CommandDecreaseAperture
+        CommandDecreaseAperture,
+        CommandIncreaseShutterSpeed,
+        CommandDecreaseShutterSpeed,
+        CommandStartMovie,
+        CommandStopMovie
     };
 
     explicit CameraThread(QObject *parent = 0);
@@ -63,6 +77,7 @@ protected:
     void doCapturePreview();
     int setToggleWidget(QString widgetName, int toggleValue);
     int setRangeWidget(QString widgetName, float rangeValue);
+    int setRadioWidget(QString widgetName, const char* radioValue);
     int updateConfig();
 
 
@@ -83,6 +98,7 @@ private:
     // Thread control
     bool m_stop;
     bool m_liveview;
+    bool m_recording;
 
     // Thread synchronization
     QMutex m_mutex;
@@ -101,6 +117,9 @@ private:
 
     QList<QString> m_cameraApertures;
     int m_cameraAperture;
+
+    QList<QString> m_cameraShutterSpeeds;
+    int m_cameraShutterSpeed;
 
 signals:
     void previewAvailable(QPixmap preview);

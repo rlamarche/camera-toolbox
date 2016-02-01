@@ -128,6 +128,26 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Enter:
         m_cameraThread.executeCommand(CameraThread::CommandToggleLiveview);
         break;
+
+    case Qt::Key_Up:
+        m_cameraThread.executeCommand(CameraThread::CommandIncreaseAperture);
+        break;
+
+    case Qt::Key_Down:
+        m_cameraThread.executeCommand(CameraThread::CommandDecreaseAperture);
+        break;
+
+    case Qt::Key_Left:
+        m_cameraThread.executeCommand(CameraThread::CommandIncreaseShutterSpeed);
+        break;
+
+    case Qt::Key_Right:
+        m_cameraThread.executeCommand(CameraThread::CommandDecreaseShutterSpeed);
+        break;
+    case Qt::Key_Space:
+        m_cameraThread.executeCommand(CameraThread::CommandStartMovie);
+        break;
+
     default:
         QOpenGLWindow::keyPressEvent(event);
     }
