@@ -12,16 +12,19 @@
 
 #include <iostream>
 
-MainWindow::MainWindow() :
-    QOpenGLWindow(), m_liveviewTimer(0), m_cameraThread(0), fps(0)
+MainWindow::MainWindow(hpis::Camera* camera) :
+    QOpenGLWindow(), m_liveviewTimer(0), fps(0)
 {
+    camera->setParent(this);
     m_overscanLeft = -32;
     m_overscanRight = -32;
     m_overscanTop = -32;
     m_overscanBottom = -32;
 
-    connect(&m_cameraThread, SIGNAL(imageAvailable(QImage)), this, SLOT(showImage(QImage)));
-    m_cameraThread.start();
+    m_cameraThread = new CameraThread(camera, this);
+
+    connect(m_cameraThread, SIGNAL(imageAvailable(QImage)), this, SLOT(showImage(QImage)));
+    m_cameraThread->start();
 }
 
 MainWindow::~MainWindow()
@@ -29,9 +32,9 @@ MainWindow::~MainWindow()
     if (m_liveviewTimer) {
         m_liveviewTimer->stop();
     }
-    if (m_cameraThread.isRunning()) {
-        m_cameraThread.stop();
-        m_cameraThread.wait();
+    if (m_cameraThread->isRunning()) {
+        m_cameraThread->stop();
+        m_cameraThread->wait();
     }
 }
 
@@ -126,26 +129,26 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         break;
 
     case Qt::Key_Enter:
-        m_cameraThread.executeCommand(CameraThread::CommandToggleLiveview);
+        m_cameraThread->executeCommand(CameraThread::CommandToggleLiveview);
         break;
 
     case Qt::Key_Up:
-        m_cameraThread.executeCommand(CameraThread::CommandIncreaseAperture);
+        m_cameraThread->executeCommand(CameraThread::CommandIncreaseAperture);
         break;
 
     case Qt::Key_Down:
-        m_cameraThread.executeCommand(CameraThread::CommandDecreaseAperture);
+        m_cameraThread->executeCommand(CameraThread::CommandDecreaseAperture);
         break;
 
     case Qt::Key_Left:
-        m_cameraThread.executeCommand(CameraThread::CommandIncreaseShutterSpeed);
+        m_cameraThread->executeCommand(CameraThread::CommandIncreaseShutterSpeed);
         break;
 
     case Qt::Key_Right:
-        m_cameraThread.executeCommand(CameraThread::CommandDecreaseShutterSpeed);
+        m_cameraThread->executeCommand(CameraThread::CommandDecreaseShutterSpeed);
         break;
     case Qt::Key_Space:
-        m_cameraThread.executeCommand(CameraThread::CommandStartMovie);
+        m_cameraThread->executeCommand(CameraThread::CommandStartMovie);
         break;
 
     default:

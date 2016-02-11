@@ -1,5 +1,7 @@
-#ifndef LIVEVIEWTHREAD_H
-#define LIVEVIEWTHREAD_H
+#ifndef CAMERATHREAD_H
+#define CAMERATHREAD_H
+
+#include "camera.h"
 
 #include <QObject>
 #include <QThread>
@@ -27,7 +29,9 @@
 #define HPIS_CONFIG_KEY_START_MOVIE "movie"
 #define HPIS_CONFIG_KEY_STOP_MOVIE "920b"
 
+
 class DecoderThread;
+
 
 class CameraThread : public QThread
 {
@@ -47,7 +51,7 @@ public:
         CommandStopMovie
     };
 
-    explicit CameraThread(QObject *parent = 0);
+    explicit CameraThread(hpis::Camera* camera, QObject *parent = 0);
     void stop();
     void executeCommand(Command executeCommand);
 
@@ -60,33 +64,38 @@ protected:
     // Init & Shutdown
     void init();
     void shutdown();
+    /*
     bool lookupCamera();
     int lookupWidgets(CameraWidget* widget);
-
+*/
 
     // Widget utils
-    QList<QString> extractWidgetChoices(CameraWidget* widget);
+    //QList<QString> extractWidgetChoices(CameraWidget* widget);
 
 
     // Camera control
-    void extractCameraCapabilities();
-    void refreshCameraSettings();
+    /*void extractCameraCapabilities();
+    void refreshCameraSettings();*/
     void doCommand(Command executeCommand);
 
 
     void doCapturePreview();
+
+    /*
     int setToggleWidget(QString widgetName, int toggleValue);
     int setRangeWidget(QString widgetName, float rangeValue);
     int setRadioWidget(QString widgetName, const char* radioValue);
     int updateConfig();
-
+*/
 
     // Image decoding
     void previewDecoded(QImage image);
+    /*
     QImage decodeImage(const char *data, unsigned long int size);
-    QImage decodeImageTurbo(const char *data, unsigned long int size);
+    QImage decodeImageTurbo(const char *data, unsigned long int size);*/
 private:
     // GPhoto context
+    /*
     GPContext*              m_context;
     CameraAbilitiesList*    m_abilitiesList;
     GPPortInfoList*         m_portInfoList;
@@ -94,6 +103,9 @@ private:
     CameraWidget*           m_cameraWindow;
 
     QMap<QString, CameraWidget*> m_widgets;
+*/
+
+    hpis::Camera* m_camera;
 
     // Thread control
     bool m_stop;
@@ -110,17 +122,18 @@ private:
     // Decoder
     DecoderThread* m_decoderThread;
 
+
     // Camera infos
-    CameraAbilities m_cameraAbilities;
+    //CameraAbilities m_cameraAbilities;
     QString m_cameraModel;
     QString m_cameraPort;
-
+/*
     QList<QString> m_cameraApertures;
     int m_cameraAperture;
 
     QList<QString> m_cameraShutterSpeeds;
     int m_cameraShutterSpeed;
-
+*/
 signals:
     void previewAvailable(QPixmap preview);
     void imageAvailable(QImage preview);
@@ -128,4 +141,4 @@ public slots:
     void capturePreview();
 };
 
-#endif // LIVEVIEWTHREAD_H
+#endif // CAMERATHREAD_H

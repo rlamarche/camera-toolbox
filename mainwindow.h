@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include "camerathread.h"
-
+#include "camera.h"
 
 #include <QOpenGLWindow>
 #include <QMap>
@@ -21,7 +21,7 @@ class MainWindow : public QOpenGLWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow();
+    explicit MainWindow(hpis::Camera* camera);
     ~MainWindow();
 
 protected:
@@ -43,7 +43,7 @@ private:
     QTimer*                 m_liveviewTimer;
 
     // Threads
-    CameraThread m_cameraThread;
+    CameraThread* m_cameraThread;
 
     // Data
     int m_overscanLeft;

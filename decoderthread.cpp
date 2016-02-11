@@ -2,16 +2,33 @@
 
 #include "camerathread.h"
 
+#include "hello_jpeg_v2/Logger.h"
+#include "hello_jpeg_v2/JPEG.h"
+
+#include <bcm_host.h>
+
+/*
+extern "C" {
+    #include "hello/jpeg.h"
+}
+*/
+
 #include <QDebug>
 #include <jpeglib.h>
 #include <setjmp.h>
 #include <turbojpeg.h>
 
-DecoderThread::DecoderThread(CameraThread* liveviewThread, QObject *parent) : QThread(parent), m_cameraThread(liveviewThread), m_cameraFile(0)
+DecoderThread::DecoderThread(CameraThread* liveviewThread, QObject *parent) : QThread(parent), m_cameraThread(liveviewThread), m_cameraPreview(0)
+    //,m_helloLogstdout(), m_helloJpeg(&m_helloLogstdout)
 {
     m_stop = false;
+    //bcm_host_init();
 }
 
+DecoderThread::~DecoderThread()
+{
+    //bcm_host_deinit();
+}
 
 void DecoderThread::run()
 {
@@ -19,11 +36,11 @@ void DecoderThread::run()
     while (!m_stop) {
         m_mutex.lock();
         m_condition.wait(&m_mutex);
-        m_mutex.unlock();
 
         if (!m_stop) {
             doDecodePreview();
         }
+        m_mutex.unlock();
     }
 
     qInfo() << "Stop liveview decoder thread";
@@ -39,24 +56,26 @@ void DecoderThread::stop()
 
 void DecoderThread::doDecodePreview()
 {
-    unsigned long int size;
-    const char *data;
+    unsigned long int size = m_cameraPreview->size();
+    const char *data = m_cameraPreview->data();
 
-    gp_file_get_data_and_size(m_cameraFile, &data, &size);
-
-    QImage image = decodeImageTurbo(data, size);
-    gp_file_free(m_cameraFile);
-    m_cameraFile = 0;
+    //QImage image = decodeImageTurbo(data, size);
+    QImage image = decodeImageGPU(data, size);
+    delete m_cameraPreview;
+    m_cameraPreview = 0;
 
     m_cameraThread->previewDecoded(image);
 }
 
-bool DecoderThread::decodePreview(CameraFile* cameraFile)
+bool DecoderThread::decodePreview(CameraPreview* cameraPreview)
 {
     if (m_mutex.tryLock()) {
-        m_cameraFile = cameraFile;
+        m_cameraPreview = cameraPreview;
         m_condition.wakeOne();
         m_mutex.unlock();
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -215,3 +234,15 @@ QImage DecoderThread::decodeImageTurbo(const char *data, unsigned long size)
 
     return image;
 }
+
+QImage DecoderThread::decodeImageGPU(const char *data, unsigned long size)
+{
+    m_omxDecoder.decodeImage(data, size);
+    return m_omxDecoder.outputImage();
+
+    //return m_helloJpeg.DoIt(data, size);
+    //int iRes = m_helloJpeg.DoIt("/home/pi/Lair1.jpg");
+
+//    return QImage();
+}
+
