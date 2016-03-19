@@ -36,6 +36,8 @@ protected:
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
     void paintGL() Q_DECL_OVERRIDE;
     void resizeGL(int w, int h) Q_DECL_OVERRIDE;
+    void mousePressEvent(QMouseEvent *ev) Q_DECL_OVERRIDE;
+    void calcImageRect();
 
 private:
     // Timers
@@ -53,11 +55,15 @@ private:
 
     QPixmap m_preview;
     QImage m_image;
-    float fps;
+    float m_fps;
+    QRect m_imageRect;
+
+    hpis::CameraStatus m_cameraStatus;
 
 public slots:
     void showPreview(QPixmap preview);
     void showImage(QImage image);
+    void cameraStatus(hpis::CameraStatus cameraStatus);
     //void lookupCamera();
 };
 

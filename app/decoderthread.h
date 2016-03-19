@@ -10,10 +10,9 @@
 
 #include "camerapreview.h"
 
+#ifdef USE_RPI
 #include "gpu/omximagedecoder.h"
-
-//#include "hello_jpeg_v2/Logger.h"
-//#include "hello_jpeg_v2/JPEG.h"
+#endif
 
 class CameraThread;
 
@@ -45,12 +44,11 @@ private:
     // Data
     CameraPreview* m_cameraPreview;
 
+#ifdef USE_RPI
     // Decoder (OMX)
     OMXImageDecoder m_omxDecoder;
+#endif
 
-    // Hello JPEG (OMX)
-    //Logger m_helloLogstdout;
-    //JPEG m_helloJpeg;
 signals:
 
 public slots:

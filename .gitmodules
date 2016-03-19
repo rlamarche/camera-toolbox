@@ -1,0 +1,3 @@
+[submodule "libgphoto2"]
+	path = libgphoto2
+	url = git@github.com:gphoto/libgphoto2.git

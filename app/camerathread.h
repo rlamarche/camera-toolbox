@@ -2,6 +2,7 @@
 #define CAMERATHREAD_H
 
 #include "camera.h"
+#include "camerastatus.h"
 
 #include <QObject>
 #include <QThread>
@@ -39,21 +40,47 @@ class CameraThread : public QThread
 
     Q_OBJECT
 public:
-    enum Command {
+    enum CommandType {
         CommandStartLiveview,
         CommandStopLiveview,
-        CommandToggleLiveview,
         CommandIncreaseAperture,
         CommandDecreaseAperture,
         CommandIncreaseShutterSpeed,
         CommandDecreaseShutterSpeed,
+        CommandExposureModePlus,
+        CommandExposureModeMinus,
+        CommandIncreaseLvZoomRatio,
+        CommandDecreaseLvZoomRatio,
+        CommandChangeAfArea,
+        CommandPhotoMode,
+        CommandVideoMode,
+
+        CommandToggleLiveview,
         CommandStartMovie,
-        CommandStopMovie
+        CommandStopMovie,
+        CommandCapturePhoto
+    };
+
+    class Command {
+    public:
+        Command();
+        Command(CommandType commandType);
+        static Command changeAfArea(int x, int y);
+
+        CommandType type();
+        int x();
+        int y();
+    private:
+        CommandType m_commandType;
+        int m_x;
+        int m_y;
     };
 
     explicit CameraThread(hpis::Camera* camera, QObject *parent = 0);
     void stop();
     void executeCommand(Command executeCommand);
+
+
 
 
 
@@ -112,6 +139,9 @@ private:
     bool m_liveview;
     bool m_recording;
 
+    int refreshTimeoutMs;
+
+
     // Thread synchronization
     QMutex m_mutex;
     QWaitCondition m_condition;
@@ -137,6 +167,7 @@ private:
 signals:
     void previewAvailable(QPixmap preview);
     void imageAvailable(QImage preview);
+    void cameraStatus(hpis::CameraStatus cameraStatus);
 public slots:
     void capturePreview();
 };

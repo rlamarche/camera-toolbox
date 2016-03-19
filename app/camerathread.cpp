@@ -2,21 +2,67 @@
 
 #include "decoderthread.h"
 
+#ifdef USE_LIBJPEG
 #include <jpeglib.h>
 #include <setjmp.h>
+#endif
+
+#ifdef USE_LIBTURBOJPEG
 #include <turbojpeg.h>
+#endif
+
 #include <gphoto2/gphoto2-port-info-list.h>
 
 #include <QDebug>
 
+#include <QTime>
+
+
 QString
 hpis_gp_port_result_as_string (int result);
+
+CameraThread::Command::Command()
+{
+
+}
+
+CameraThread::Command::Command(CommandType commandType) : m_commandType(commandType)
+{
+
+}
+
+int CameraThread::Command::x()
+{
+    return m_x;
+}
+
+int CameraThread::Command::y()
+{
+    return m_y;
+}
+
+CameraThread::CommandType CameraThread::Command::type()
+{
+    return m_commandType;
+}
+
+CameraThread::Command CameraThread::Command::changeAfArea(int x, int y)
+{
+    Command command(CameraThread::CommandChangeAfArea);
+    command.m_x = x;
+    command.m_y = y;
+
+    return command;
+}
+
+
 
 CameraThread::CameraThread(hpis::Camera* camera, QObject *parent) : QThread(parent),
     m_camera(camera), m_stop(false), m_liveview(false), m_recording(false), m_decoderThread(0)
 {
-
+    refreshTimeoutMs = 1000;
 }
+
 
 void CameraThread::init()
 {
@@ -114,7 +160,16 @@ void CameraThread::run()
     init();
 
     Command command;
+    QTime time;
+    time.start();
+    int timeout;
     while (!m_stop) {
+        if (time.elapsed() > refreshTimeoutMs)
+        {
+            time.restart();
+//            m_camera->refreshCameraSettings();
+            emit cameraStatus(m_camera->status());
+        }
         /*
         if (m_commandQueue.isEmpty())
         {
@@ -126,16 +181,23 @@ void CameraThread::run()
         if (!m_stop && m_liveview) {
             doCapturePreview();
         } else if (m_commandQueue.isEmpty()) {
-            m_mutex.lock();
-            m_condition.wait(&m_mutex);
-            m_mutex.unlock();
+            timeout = refreshTimeoutMs - time.elapsed();
+            if (timeout > 0) {
+                m_mutex.lock();
+                m_condition.wait(&m_mutex, timeout);
+                m_mutex.unlock();
+            }
+
         }
 
         m_mutex.lock();
         if (!m_stop && !m_commandQueue.isEmpty()) {
-            command = m_commandQueue.dequeue();
-            qDebug() << "Process command" << command;
-            doCommand(command);
+            while (!m_commandQueue.isEmpty())
+            {
+                command = m_commandQueue.dequeue();
+                doCommand(command);
+            }
+            m_camera->applyCameraSettings();
         }
         m_mutex.unlock();
 
@@ -155,6 +217,9 @@ void CameraThread::doCapturePreview()
         {
             delete cameraPreview;
         }
+    } else {
+        m_liveview = false;
+        qInfo() << "The camera is not ready, try again later.";
     }
 
     /*
@@ -202,7 +267,6 @@ void CameraThread::stop()
 
 void CameraThread::executeCommand(Command command)
 {
-    qDebug() << "Received command" << command;
     m_mutex.lock();
     m_commandQueue.append(command);
     m_condition.wakeOne();
@@ -224,7 +288,7 @@ void CameraThread::previewDecoded(QImage image)
 void CameraThread::doCommand(Command command)
 {
     int ret;
-    switch (command) {
+    switch (command.type()) {
     case CommandStartLiveview:
         m_liveview = true;
         /*
@@ -258,6 +322,7 @@ void CameraThread::doCommand(Command command)
         break;
 
     case CommandIncreaseAperture:
+        m_camera->increaseAperture();
         /*
         if (m_cameraAperture < m_cameraApertures.length() - 1) {
             QString newAperture = m_cameraApertures[m_cameraAperture + 1];
@@ -269,6 +334,7 @@ void CameraThread::doCommand(Command command)
         */
         break;
     case CommandDecreaseAperture:
+        m_camera->decreaseAperture();
         /*
         if (m_cameraAperture > 0) {
             QString newAperture = m_cameraApertures[m_cameraAperture - 1];
@@ -281,6 +347,7 @@ void CameraThread::doCommand(Command command)
         break;
 
     case CommandIncreaseShutterSpeed:
+        m_camera->increaseShutterSpeed();
         /*
         if (m_cameraShutterSpeed < m_cameraShutterSpeeds.length() - 1) {
             QString newShutterSpeed = m_cameraShutterSpeeds[m_cameraShutterSpeed + 1];
@@ -292,6 +359,7 @@ void CameraThread::doCommand(Command command)
         */
         break;
     case CommandDecreaseShutterSpeed:
+        m_camera->decreaseShutterSpeed();
         /*
         if (m_cameraShutterSpeed > 0) {
             QString newShutterSpeed = m_cameraShutterSpeeds[m_cameraShutterSpeed - 1];
@@ -301,6 +369,20 @@ void CameraThread::doCommand(Command command)
             }
         }
         */
+        break;
+
+    case CommandExposureModePlus:
+        m_camera->exposureModePlus();
+        break;
+
+    case CommandExposureModeMinus:
+        m_camera->exposureModeMinus();
+        break;
+    case CommandIncreaseLvZoomRatio:
+        m_camera->increaseLvZoomRatio();
+        break;
+    case CommandDecreaseLvZoomRatio:
+        m_camera->decreaseLvZoomRatio();
         break;
 
     case CommandStartMovie:
@@ -314,6 +396,22 @@ void CameraThread::doCommand(Command command)
             m_recording = !m_recording;
         }
         */
+        break;
+
+    case CommandCapturePhoto:
+        //  m_liveview = false;
+        m_camera->capturePhoto();
+        break;
+
+    case CommandChangeAfArea:
+        m_camera->changeAfArea(command.x(), command.y());
+        break;
+
+    case CommandPhotoMode:
+        m_camera->setCaptureMode(hpis::Camera::CaptureModePhoto);
+        break;
+    case CommandVideoMode:
+        m_camera->setCaptureMode(hpis::Camera::CaptureModeVideo);
         break;
 
     default: break;

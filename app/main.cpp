@@ -8,17 +8,21 @@
 #include <gphoto2/gphoto2-context.h>
 #include <gphoto2/gphoto2-port-info-list.h>
 
-
+#ifdef USE_RPI
 #include <bcm_host.h>
+#endif
+
 #include <assert.h>
 
 #include "gphoto/gpcamera.h"
 
+#ifdef USE_RPI
 #include "hello_jpeg_v2/Logger.h"
 #include "hello_jpeg_v2/JPEG.h"
 
 
 #include "gpu/omximagedecoder.h"
+#endif
 
 bool lookupCamera(hpis::Camera** camera) {
     GPContext *context = gp_context_new();
@@ -49,6 +53,7 @@ bool lookupCamera(hpis::Camera** camera) {
 
 int main(int argc, char *argv[])
 {
+    qRegisterMetaType<hpis::CameraStatus>();
 /*
     OMXImageDecoder* decoder = new OMXImageDecoder();
     char           *sourceImage;

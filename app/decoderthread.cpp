@@ -2,10 +2,14 @@
 
 #include "camerathread.h"
 
+
+#ifdef USE_RPI
 #include "hello_jpeg_v2/Logger.h"
 #include "hello_jpeg_v2/JPEG.h"
 
 #include <bcm_host.h>
+#endif
+
 
 /*
 extern "C" {
@@ -14,9 +18,16 @@ extern "C" {
 */
 
 #include <QDebug>
+
+#ifdef USE_LIBJPEG
 #include <jpeglib.h>
 #include <setjmp.h>
+#endif
+
+#ifdef USE_LIBTURBOJPEG
 #include <turbojpeg.h>
+#endif
+
 
 DecoderThread::DecoderThread(CameraThread* liveviewThread, QObject *parent) : QThread(parent), m_cameraThread(liveviewThread), m_cameraPreview(0)
     //,m_helloLogstdout(), m_helloJpeg(&m_helloLogstdout)
@@ -59,8 +70,13 @@ void DecoderThread::doDecodePreview()
     unsigned long int size = m_cameraPreview->size();
     const char *data = m_cameraPreview->data();
 
-    //QImage image = decodeImageTurbo(data, size);
-    QImage image = decodeImageGPU(data, size);
+    QImage image;
+#ifdef USE_RPI
+    image = decodeImageGPU(data, size);
+#else
+    image.loadFromData((const uchar*) data, (int) size, "JPG");
+#endif
+
     delete m_cameraPreview;
     m_cameraPreview = 0;
 
@@ -79,6 +95,8 @@ bool DecoderThread::decodePreview(CameraPreview* cameraPreview)
     }
 }
 
+
+#ifdef USE_LIBJPEG
 struct my_error_mgr {
   struct jpeg_error_mgr pub;    /* "public" fields */
 
@@ -219,6 +237,10 @@ QImage DecoderThread::decodeImage(const char *data, unsigned long size)
 
     return image;
 }
+#endif
+
+
+#ifdef USE_LIBTURBOJPEG
 
 QImage DecoderThread::decodeImageTurbo(const char *data, unsigned long size)
 {
@@ -234,7 +256,9 @@ QImage DecoderThread::decodeImageTurbo(const char *data, unsigned long size)
 
     return image;
 }
+#endif
 
+#ifdef USE_RPI
 QImage DecoderThread::decodeImageGPU(const char *data, unsigned long size)
 {
     m_omxDecoder.decodeImage(data, size);
@@ -245,4 +269,4 @@ QImage DecoderThread::decodeImageGPU(const char *data, unsigned long size)
 
 //    return QImage();
 }
-
+#endif
