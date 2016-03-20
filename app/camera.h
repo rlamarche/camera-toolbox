@@ -36,6 +36,10 @@ public:
 
     virtual QString aperture() = 0;
     virtual QString shutterSpeed() = 0;
+    virtual QString iso() = 0;
+    virtual bool isoAuto() = 0;
+    virtual bool setIsoAuto(bool isoAuto) = 0;
+
     virtual QString exposureMode() = 0;
     virtual QString lvZoomRatio() = 0;
 
@@ -47,12 +51,19 @@ public:
     virtual bool increaseShutterSpeed() = 0;
     virtual bool decreaseShutterSpeed() = 0;
 
+    virtual bool increaseIso() = 0;
+    virtual bool decreaseIso() = 0;
+
     virtual bool exposureModePlus() = 0;
     virtual bool exposureModeMinus() = 0;
 
 
     virtual bool increaseLvZoomRatio() = 0;
     virtual bool decreaseLvZoomRatio() = 0;
+
+    virtual bool setExposurePreview(bool exposurePreview) = 0;
+    virtual bool exposurePreview() = 0;
+
 
     CameraStatus status();
 signals:

@@ -34,7 +34,16 @@ HEADERS  += mainwindow.h \
     gphoto/gpcamera.h \
     camerastatus.h
 
-LIBS     += -lgphoto2_port -lgphoto2
+
+INCLUDEPATH = ../vendor/libgphoto2 ../vendor/libgphoto2/libgphoto2_port
+#LIBS     += -lgphoto2_port -lgphoto2
+LIBS += \
+        -L../libgphoto2 -llibgphoto2 \
+        -L../libgphoto2_port -llibgphoto2_port \
+        -lltdl -lexif
+
+
+DEFINES += _GPHOTO2_INTERNAL_CODE
 
 
 defined(USE_LIBJPEG) {

@@ -163,6 +163,7 @@ void CameraThread::run()
     QTime time;
     time.start();
     int timeout;
+    emit cameraStatus(m_camera->status());
     while (!m_stop) {
         if (time.elapsed() > refreshTimeoutMs)
         {
@@ -218,7 +219,7 @@ void CameraThread::doCapturePreview()
             delete cameraPreview;
         }
     } else {
-        m_liveview = false;
+        //m_liveview = false;
         qInfo() << "The camera is not ready, try again later.";
     }
 
@@ -346,29 +347,25 @@ void CameraThread::doCommand(Command command)
         */
         break;
 
+    case CommandEnableIsoAuto:
+        m_camera->setIsoAuto(true);
+        break;
+    case CommandDisableIsoAuto:
+        m_camera->setIsoAuto(false);
+        break;
+
     case CommandIncreaseShutterSpeed:
         m_camera->increaseShutterSpeed();
-        /*
-        if (m_cameraShutterSpeed < m_cameraShutterSpeeds.length() - 1) {
-            QString newShutterSpeed = m_cameraShutterSpeeds[m_cameraShutterSpeed + 1];
-            ret = setRadioWidget(HPIS_CONFIG_KEY_SHUTTERSPEED, newShutterSpeed.toStdString().c_str());
-            if (ret == GP_OK) {
-                m_cameraShutterSpeed ++;
-            }
-        }
-        */
         break;
     case CommandDecreaseShutterSpeed:
         m_camera->decreaseShutterSpeed();
-        /*
-        if (m_cameraShutterSpeed > 0) {
-            QString newShutterSpeed = m_cameraShutterSpeeds[m_cameraShutterSpeed - 1];
-            ret = setRadioWidget(HPIS_CONFIG_KEY_SHUTTERSPEED, newShutterSpeed.toStdString().c_str());
-            if (ret == GP_OK) {
-                m_cameraShutterSpeed --;
-            }
-        }
-        */
+        break;
+
+    case CommandIncreaseIso:
+        m_camera->increaseIso();
+        break;
+    case CommandDecreaseIso:
+        m_camera->decreaseIso();
         break;
 
     case CommandExposureModePlus:
@@ -383,6 +380,13 @@ void CameraThread::doCommand(Command command)
         break;
     case CommandDecreaseLvZoomRatio:
         m_camera->decreaseLvZoomRatio();
+        break;
+
+    case CommandEnableExposurePreview:
+        m_camera->setExposurePreview(true);
+        break;
+    case CommandDisableExposurePreview:
+        m_camera->setExposurePreview(false);
         break;
 
     case CommandStartMovie:

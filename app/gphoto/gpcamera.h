@@ -27,6 +27,15 @@ public:
         CaptureTargetCard
     };
 
+    enum StillCaptureMode {
+        StillCaptureModeSingleShot = 0,
+        StillCaptureModeBurst,
+        StillCaptureModeLowSpeed,
+        StillCaptureModeTimer,
+        StillCaptureModeMirrorUp,
+        StillCaptureModeQuiet
+    };
+
 
     explicit GPCamera(QString cameraModel, QString cameraPort, QObject *parent = 0);
     ~GPCamera();
@@ -44,6 +53,9 @@ public:
 
     QString aperture();
     QString shutterSpeed();
+    QString iso();
+    bool isoAuto();
+    bool setIsoAuto(bool isoAuto);
     QString exposureMode();
     QString lvZoomRatio();
 
@@ -53,12 +65,20 @@ public:
     bool setCaptureTarget(CaptureTarget captureTarget);
     QString captureTarget();
 
+    bool setStillCaptureMode(StillCaptureMode stillCaptureMode);
+    QString stillCaptureMode();
+
+    bool setExposurePreview(bool exposurePreview);
+    bool exposurePreview();
 
     bool increaseAperture();
     bool decreaseAperture();
 
     bool increaseShutterSpeed();
     bool decreaseShutterSpeed();
+
+    bool increaseIso();
+    bool decreaseIso();
 
     bool exposureModePlus();
     bool exposureModeMinus();
@@ -96,6 +116,8 @@ protected:
 
     virtual QString apertureWidgetName();
     virtual QString shutterSpeedWidgetName();
+    virtual QString isoWidgetName();
+    virtual QString isoAutoWidgetName();
 
     virtual QString liveviewSelectorWidgetName();
     virtual QString afModeWidgetName();
@@ -110,7 +132,9 @@ protected:
     virtual QString recordingMediaWidgetName();
     virtual QString captureTargetWidgetName();
 
+    virtual QString stillCaptureModeWidgetName();
 
+    virtual QString exposurePreviewWidgetName();
 private:
 
     int m_cameraNumber;
@@ -143,6 +167,11 @@ private:
     QList<QString> m_cameraShutterSpeeds;
     int m_cameraShutterSpeed;
 
+    QList<QString> m_cameraIsos;
+    int m_cameraIso;
+
+    bool m_cameraIsoAuto;
+
     QList<QString> m_exposureModes;
     int m_exposureMode;
 
@@ -155,6 +184,10 @@ private:
     QList<QString> m_captureTargets;
     int m_captureTarget;
 
+    QList<QString> m_stillCaptureModes;
+    int m_stillCaptureMode;
+
+    bool m_exposurePreview;
 signals:
 
 public slots:

@@ -24,6 +24,90 @@
 #include "gpu/omximagedecoder.h"
 #endif
 
+#include <sys/time.h>
+
+/* time zero for debug log time stamps */
+static struct timeval glob_tv_zero = { 0, 0 };
+
+
+static void
+debug_func (GPLogLevel level, const char *domain, const char *str, void *data)
+{
+    struct timeval tv;
+    long sec, usec;
+    FILE *logfile = (data != NULL)?(FILE *)data:stderr;
+
+    gettimeofday (&tv,NULL);
+    sec = tv.tv_sec  - glob_tv_zero.tv_sec;
+    usec = tv.tv_usec - glob_tv_zero.tv_usec;
+    if (usec < 0) {sec--; usec += 1000000L;}
+    fprintf (logfile, "%li.%06li %-28s(%i): %s\n", sec, usec, domain, level, str);
+    printf ("%li.%06li %-28s(%i): %s\n", sec, usec, domain, level, str);
+}
+
+
+int
+debug_action (const char *debug_loglevel, const char *debug_logfile_name)
+{
+    int n;
+    FILE *logfile = NULL;
+    GPLogLevel loglevel = GP_LOG_ALL;
+
+    /* make sure we're only executed once */
+    static int debug_flag = 0;
+    if (debug_flag != 0)
+        return(GP_OK);
+    debug_flag = 1;
+
+    if (debug_loglevel && !strcmp(debug_loglevel, "error"))
+        loglevel = GP_LOG_ERROR;
+    else if (debug_loglevel && !strcmp(debug_loglevel, "debug"))
+        loglevel = GP_LOG_DEBUG;
+    else if (debug_loglevel && !strcmp(debug_loglevel, "data"))
+        loglevel = GP_LOG_DATA;
+    else if (debug_loglevel && !strcmp(debug_loglevel, "all"))
+        loglevel = GP_LOG_ALL;
+
+    if (debug_logfile_name != NULL) {
+      /* FIXME: Handle fopen() error besides using stderr? */
+      logfile = fopen(debug_logfile_name, "a");
+    }
+    if (logfile == NULL) {
+      logfile = stderr;
+    }
+    setbuf(logfile, NULL);
+    setbuf(stdout, NULL);
+
+    gettimeofday (&glob_tv_zero, NULL);
+
+    gp_log_add_func (loglevel, debug_func, (void *) logfile);
+    gp_log (GP_LOG_DEBUG, "main", "ALWAYS INCLUDE THE FOLLOWING LINES "
+                    "WHEN SENDING DEBUG MESSAGES TO THE "
+                    "MAILING LIST:");
+
+    if (1) {
+        /* This is internal debug stuff for developers - no
+         * need for translation IMHO */
+        const char *iolibs = getenv("IOLIBS");
+        const char *camlibs = getenv("CAMLIBS");
+        if (camlibs) {
+            gp_log (GP_LOG_DEBUG, "main", "CAMLIBS = '%s'", camlibs);
+        } else {
+            gp_log (GP_LOG_DEBUG, "main",
+                "CAMLIBS env var not set, using compile-time default instead");
+        }
+        if (iolibs) {
+            gp_log (GP_LOG_DEBUG, "main", "IOLIBS = '%s'", iolibs);
+        } else {
+            gp_log (GP_LOG_DEBUG, "main",
+                "IOLIBS env var not set, using compile-time default instead");
+        }
+    }
+
+    return (GP_OK);
+}
+
+
 bool lookupCamera(hpis::Camera** camera) {
     GPContext *context = gp_context_new();
 
@@ -32,8 +116,13 @@ bool lookupCamera(hpis::Camera** camera) {
     gp_list_new (&cameraList);
     int count = gp_camera_autodetect(cameraList, context);
 
-    if (count == 0)
+    if (count <= 0)
     {
+        if (count == 0) {
+            qInfo() << "No camera detected";
+        } else {
+            qInfo() << "GP ERROR :" << count;
+        }
         gp_context_unref(context);
         return false;
     }
@@ -113,6 +202,8 @@ int main(int argc, char *argv[])
     return iRes;
 */
 
+
+    debug_action(NULL, "out.log");
 
     QApplication a(argc, argv);
 

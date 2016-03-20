@@ -47,6 +47,10 @@ public:
         CommandDecreaseAperture,
         CommandIncreaseShutterSpeed,
         CommandDecreaseShutterSpeed,
+        CommandIncreaseIso,
+        CommandDecreaseIso,
+        CommandEnableIsoAuto,
+        CommandDisableIsoAuto,
         CommandExposureModePlus,
         CommandExposureModeMinus,
         CommandIncreaseLvZoomRatio,
@@ -54,11 +58,13 @@ public:
         CommandChangeAfArea,
         CommandPhotoMode,
         CommandVideoMode,
+        CommandCapturePhoto,
+        CommandEnableExposurePreview,
+        CommandDisableExposurePreview,
 
         CommandToggleLiveview,
         CommandStartMovie,
         CommandStopMovie,
-        CommandCapturePhoto
     };
 
     class Command {

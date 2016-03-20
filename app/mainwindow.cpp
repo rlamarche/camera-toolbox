@@ -84,7 +84,7 @@ void MainWindow::showImage(QImage image)
 
 void MainWindow::cameraStatus(hpis::CameraStatus cameraStatus)
 {
-
+    m_cameraStatus = cameraStatus;
 }
 
 /*
@@ -171,10 +171,28 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         break;
 
     case Qt::Key_E:
-        m_cameraThread->executeCommand(CameraThread::CommandExposureModePlus);
+        m_cameraThread->executeCommand(CameraThread::CommandIncreaseIso);
         break;
     case Qt::Key_A:
-        m_cameraThread->executeCommand(CameraThread::CommandExposureModeMinus);
+        m_cameraThread->executeCommand(CameraThread::CommandDecreaseIso);
+        break;
+    case Qt::Key_I:
+        if (m_cameraStatus.isoAuto())
+        {
+            m_cameraThread->executeCommand(CameraThread::CommandDisableIsoAuto);
+        } else {
+            m_cameraThread->executeCommand(CameraThread::CommandEnableIsoAuto);
+        }
+        break;
+
+    case Qt::Key_P:
+        if (m_cameraStatus.exposurePreview())
+        {
+            m_cameraThread->executeCommand(CameraThread::CommandDisableExposurePreview);
+        } else {
+            m_cameraThread->executeCommand(CameraThread::CommandEnableExposurePreview);
+        }
+
         break;
 
     case Qt::Key_Plus:

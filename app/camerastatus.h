@@ -17,11 +17,15 @@ public:
     QString aperture();
     QString shutterSpeed();
     QString iso();
+    bool isoAuto();
+    bool exposurePreview();
 
 private:
     QString m_aperture;
     QString m_shutterSpeed;
     QString m_iso;
+    bool m_isoAuto;
+    bool m_exposurePreview;
 
 };
 
