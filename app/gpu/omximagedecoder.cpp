@@ -227,7 +227,7 @@ int OMXImageDecoder::portSettingsChanged(OPENMAX_JPEG_DECODER * decoder)
                                              NULL,
                                              portdef.nBufferSize);
     if (ret != OMX_ErrorNone) {
-        perror("Eror allocating buffer");
+        perror("Error allocating buffer");
         return OMXJPEG_ERROR_MEMORY;
     }
 

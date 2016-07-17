@@ -1,11 +1,19 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+
+//#include "histogram/histogram.h"
+//#include "histogram/imageanalyzer.h"
+
+
+
 #include "camerathread.h"
 #include "camera.h"
 
 #include <QOpenGLWindow>
 #include <QMap>
+
+
 
 #include <gphoto2/gphoto2-camera.h>
 #include <gphoto2/gphoto2-context.h>
@@ -59,6 +67,9 @@ private:
     QRect m_imageRect;
 
     hpis::CameraStatus m_cameraStatus;
+
+   // ImageAnalyzer* m_imageAnalyzer;
+   // HistogramDisplay* m_histogramDisplay;
 
 public slots:
     void showPreview(QPixmap preview);

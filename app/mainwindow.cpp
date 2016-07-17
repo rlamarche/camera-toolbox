@@ -23,13 +23,19 @@ MainWindow::MainWindow(hpis::Camera* camera) :
     m_overscanTop = -32;
     m_overscanBottom = -32;
 #else
-    m_overscanLeft = 0;
-    m_overscanRight = 0;
-    m_overscanTop = 0;
-    m_overscanBottom = 0;
+    m_overscanLeft = -32;
+    m_overscanRight = -32;
+    m_overscanTop = -32;
+    m_overscanBottom = -32;
 #endif
 
     m_cameraThread = new CameraThread(camera, this);
+
+
+    //m_imageAnalyzer = new ImageAnalyzer();
+    //m_histogramDisplay = new HistogramDisplay();
+
+    //m_histogramDisplay->setImageAnalyzer(m_imageAnalyzer);
 
     connect(m_cameraThread, SIGNAL(imageAvailable(QImage)), this, SLOT(showImage(QImage)));
     connect(m_cameraThread, SIGNAL(cameraStatus(hpis::CameraStatus)), this, SLOT(cameraStatus(hpis::CameraStatus)));
@@ -45,6 +51,9 @@ MainWindow::~MainWindow()
         m_cameraThread->stop();
         m_cameraThread->wait();
     }
+
+    //delete m_histogramDisplay;
+    //delete m_imageAnalyzer;
 }
 
 void MainWindow::showPreview(QPixmap preview)
@@ -78,6 +87,11 @@ void MainWindow::showImage(QImage image)
     }
 
     m_image = image;
+
+    //QImage toAnalyze = m_image.convertToFormat(QImage::Format_ARGB32);
+
+    //m_imageAnalyzer->analyze((unsigned int*) toAnalyze.bits(), toAnalyze.width(), toAnalyze.height(), toAnalyze.bytesPerLine() / 4, true);
+
     update();
 }
 
@@ -85,6 +99,7 @@ void MainWindow::showImage(QImage image)
 void MainWindow::cameraStatus(hpis::CameraStatus cameraStatus)
 {
     m_cameraStatus = cameraStatus;
+    update();
 }
 
 /*
@@ -175,6 +190,12 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         break;
     case Qt::Key_A:
         m_cameraThread->executeCommand(CameraThread::CommandDecreaseIso);
+        break;
+    case Qt::Key_T:
+        m_cameraThread->executeCommand(CameraThread::CommandExposureModePlus);
+        break;
+    case Qt::Key_R:
+        m_cameraThread->executeCommand(CameraThread::CommandExposureModeMinus);
         break;
     case Qt::Key_I:
         if (m_cameraStatus.isoAuto())
@@ -268,9 +289,20 @@ void MainWindow::paintGL()
     p.drawImage(m_imageRect, m_image);
     //p.drawImage(QRect(0, 0, m_image.width(), m_image.height()), m_image);
 
+    //QImage histogram(640, 480, QImage::Format_ARGB32);
+    //m_histogramDisplay->renderHistogram((unsigned int *) histogram.bits(), histogram.bytesPerLine() / 4, histogram.width(), histogram.height(), false);
+    //p.drawImage(m_imageRect, histogram);
+
+
     p.setPen(QColor(255, 255, 255));
     //p.drawText(QPointF(0, 0), QString("FPS : %1").arg(fps));
     p.drawText(0 - m_overscanLeft, this->height() + m_overscanBottom, QString("FPS : %1").arg(m_fps));
+    p.drawText(0 - m_overscanLeft, 0 - m_overscanTop, QString("Aperture : %1").arg(m_cameraStatus.aperture()));
+    p.drawText(width() - m_overscanRight - 500, 0 - m_overscanTop, QString("Speed : %1").arg(m_cameraStatus.shutterSpeed()));
+
+
+
+
    // p.drawText(0, 0, this->width(), this->height(), Qt::AlignCenter, QString("Hello, World"));
 
 }

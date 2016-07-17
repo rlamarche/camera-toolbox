@@ -1,6 +1,6 @@
 TEMPLATE = lib
 #CONFIG = staticlib
-CONFIG += compile_libtool
+#CONFIG += compile_libtool
 
 
 SOURCES = \
@@ -27,8 +27,8 @@ INCLUDEPATH = \
 QMAKE_CFLAGS = -g -O2 -Wall -Wmissing-declarations -Wmissing-prototypes -fPIC
 
 QMAKE_LIBTOOL = libtool --tag=CC
-QMAKE_LFLAGS = -g -O2 -Wall -Wmissing-declarations -Wmissing-prototypes -module -no-undefined -avoid-version -export-dynamic \
-                -export-symbols $$PWD/../../vendor/libgphoto2/camlibs/camlib.sym
+#QMAKE_LFLAGS = -g -O2 -Wall -Wmissing-declarations -Wmissing-prototypes -module -no-undefined -avoid-version -export-dynamic \
+#                -export-symbols $$PWD/../../vendor/libgphoto2/camlibs/camlib.sym
 
 
 LIBS += \
@@ -42,4 +42,6 @@ DEFINES += \
         IOLIBS=\\\"iolibs\\\" \
         _GPHOTO2_INTERNAL_CODE \
 
+target.path = /home/pi/camlibs
+INSTALLS += target
 

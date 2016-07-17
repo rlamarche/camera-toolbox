@@ -86,12 +86,14 @@ bool hpis::GPCamera::init()
     }
 
     refreshCameraSettings();
-    setRecordingMedia(RecordingMediaBoth);
+
+
+    setRecordingMedia(RecordingMediaCard);
     setCaptureTarget(CaptureTargetCard);
     setStillCaptureMode(StillCaptureModeSingleShot);
-    setRangeWidget("/main/capturesettings/burstnumber", 1);
-    applyCameraSettings();
+    //gpSetRangeWidget("burstnumber", 1);
 
+    //applyCameraSettings();
 
     return true;
 }
@@ -124,6 +126,19 @@ bool hpis::GPCamera::capturePreview(CameraPreview** cameraPreview)
     return true;
 }
 
+bool hpis::GPCamera::startRecordMovie()
+{
+//#define HPIS_CONFIG_KEY_START_MOVIE "movie"
+    gpSetToggleWidget("movie", 1);
+}
+
+bool hpis::GPCamera::stopRecordMovie()
+{
+//#define HPIS_CONFIG_KEY_STOP_MOVIE "920b"
+    gpSetToggleWidget("movie", 0);
+}
+
+
 bool hpis::GPCamera::capturePhoto()
 {
     CameraFilePath camera_file_path;
@@ -144,7 +159,10 @@ bool hpis::GPCamera::capturePhoto()
     qDebug() << "Capture success.";
     //qDebug() << QString().sprintf("Path on the camera: %s/%s", camera_file_path.folder, camera_file_path.name);
 
-    bool captureComplete = true;
+    //return true;
+
+    bool captureComplete = false;
+
     while (!captureComplete)
     {
         ret = gp_camera_wait_for_event(m_camera, 100, &evtype, &data, m_context);
@@ -190,6 +208,29 @@ bool hpis::GPCamera::capturePhoto()
 
     return true;
 }
+
+bool hpis::GPCamera::startLiveView()
+{
+    int ret = gpSetToggleWidget(viewfinderWidgetName(), 1);
+    if (ret == GP_OK)
+    {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool hpis::GPCamera::stopLiveview()
+{
+    int ret = gpSetToggleWidget(viewfinderWidgetName(), 0);
+    if (ret == GP_OK)
+    {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 
 QString hpis::GPCamera::errorCodeToString(int errorCode)
 {
@@ -333,141 +374,147 @@ bool hpis::GPCamera::lookupWidgets(CameraWidget *widget, QString path)
 
 bool hpis::GPCamera::refreshCameraSettings()
 {
+    /*
     int ret = gp_camera_get_config(m_camera, &m_cameraWindow, m_context);
     lookupWidgets(m_cameraWindow, QString());
     if (ret < GP_OK) {
         reportError(QString("Unable to get camera config: %1").arg(errorCodeToString(ret)));
         return false;
     }
+    */
 
-    extractWidgetChoices(m_widgets[apertureWidgetName()], m_cameraApertures);
-    extractWidgetChoices(m_widgets[shutterSpeedWidgetName()], m_cameraShutterSpeeds);
-    extractWidgetChoices(m_widgets[isoWidgetName()], m_cameraIsos);
-    extractWidgetChoices(m_widgets[exposureModeWidgetName()], m_exposureModes);
-    extractWidgetChoices(m_widgets[lvZoomRatioWidgetName()], m_lvZoomRatios);
-    extractWidgetChoices(m_widgets[recordingMediaWidgetName()], m_recordingMedias);
-    extractWidgetChoices(m_widgets[captureTargetWidgetName()], m_captureTargets);
-    extractWidgetChoices(m_widgets[stillCaptureModeWidgetName()], m_stillCaptureModes);
-
+    extractWidgetChoices(apertureWidgetName(), m_cameraApertures);
+    extractWidgetChoices(shutterSpeedWidgetName(), m_cameraShutterSpeeds);
+    extractWidgetChoices(isoWidgetName(), m_cameraIsos);
+    extractWidgetChoices(exposureModeWidgetName(), m_exposureModes);
+    extractWidgetChoices(lvZoomRatioWidgetName(), m_lvZoomRatios);
+    extractWidgetChoices(recordingMediaWidgetName(), m_recordingMedias);
+    extractWidgetChoices(captureTargetWidgetName(), m_captureTargets);
+    extractWidgetChoices(stillCaptureModeWidgetName(), m_stillCaptureModes);
 
     return readCameraSettings();
 }
 
 bool hpis::GPCamera::readCameraSettings()
 {
-    QString currentAperture = aperture();
+    QString currentAperture;
+    gpGetRadioWidgetValue(apertureWidgetName(), currentAperture);
     if (!currentAperture.isNull())
     {
-        qDebug() << "m_cameraApertures" << m_cameraApertures << "current" << currentAperture;;
+        //qDebug() << "m_cameraApertures" << m_cameraApertures << "current" << currentAperture;;
         m_cameraAperture = m_cameraApertures.indexOf(currentAperture);
     } else {
         m_cameraAperture = -1;
     }
 
-    QString currentShutterSpeed = shutterSpeed();
+    QString currentShutterSpeed;
+    gpGetRadioWidgetValue(shutterSpeedWidgetName(), currentShutterSpeed);
     if (!currentShutterSpeed.isNull())
     {
-        qDebug() << "m_cameraShutterSpeeds" << m_cameraShutterSpeeds << "current" << currentShutterSpeed;
+        //qDebug() << "m_cameraShutterSpeeds" << m_cameraShutterSpeeds << "current" << currentShutterSpeed;
         m_cameraShutterSpeed = m_cameraShutterSpeeds.indexOf(currentShutterSpeed);
     } else {
         m_cameraShutterSpeed = -1;
     }
 
-    QString currentIso = iso();
+    QString currentIso;
+    gpGetRadioWidgetValue(isoWidgetName(), currentIso);
     if (!currentIso.isNull())
     {
-        qDebug() << "m_cameraIsos" << m_cameraIsos << "current" << currentIso;
+        //qDebug() << "m_cameraIsos" << m_cameraIsos << "current" << currentIso;
         m_cameraIso = m_cameraIsos.indexOf(currentIso);
     } else {
         m_cameraIso = -1;
     }
 
-    QString currentExposureMode = exposureMode();
+    QString currentExposureMode;
+    gpGetRadioWidgetValue(exposureModeWidgetName(), currentExposureMode);
     if (!currentExposureMode.isNull())
     {
-        qDebug() << "m_exposureModes" << m_exposureModes << "current" << currentExposureMode;
+        //qDebug() << "m_exposureModes" << m_exposureModes << "current" << currentExposureMode;
         m_exposureMode = m_exposureModes.indexOf(currentExposureMode);
     } else {
         m_exposureMode = -1;
     }
 
-    QString currentLvZoomRatio = lvZoomRatio();
+    QString currentLvZoomRatio;
+    gpGetRadioWidgetValue(lvZoomRatioWidgetName(), currentLvZoomRatio);
     if (!currentLvZoomRatio.isNull())
     {
-        qDebug() << "m_lvZoomRatios" << m_lvZoomRatios << "current" << currentLvZoomRatio;
+        //qDebug() << "m_lvZoomRatios" << m_lvZoomRatios << "current" << currentLvZoomRatio;
         m_lvZoomRatio = m_lvZoomRatios.indexOf(currentLvZoomRatio);
     } else {
         m_lvZoomRatio = -1;
     }
 
-    QString currentRecordingMedia = recordingMedia();
+    QString currentRecordingMedia;
+    gpGetRadioWidgetValue(recordingMediaWidgetName(), currentRecordingMedia);
     if (!currentRecordingMedia.isNull())
     {
-        qDebug() << "m_recordingMedias" << m_recordingMedias << "current" << currentRecordingMedia;
+        //qDebug() << "m_recordingMedias" << m_recordingMedias << "current" << currentRecordingMedia;
         m_recordingMedia = m_recordingMedias.indexOf(currentRecordingMedia);
     } else {
         m_recordingMedia = -1;
     }
 
-    QString currentCaptureTarget = captureTarget();
+    QString currentCaptureTarget;
+    gpGetRadioWidgetValue(captureTargetWidgetName(), currentCaptureTarget);
     if (!currentCaptureTarget.isNull())
     {
-        qDebug() << "m_captureTargets" << m_captureTargets << "current" << currentCaptureTarget;
+        //qDebug() << "m_captureTargets" << m_captureTargets << "current" << currentCaptureTarget;
         m_captureTarget = m_captureTargets.indexOf(currentCaptureTarget);
     } else {
         m_captureTarget = -1;
     }
 
-    QString currentStillCaptureMode = stillCaptureMode();
+    QString currentStillCaptureMode;
+    gpGetRadioWidgetValue(stillCaptureModeWidgetName(), currentStillCaptureMode);
     if (!currentStillCaptureMode.isNull())
     {
-        qDebug() << "m_stillCaptureModes" << m_stillCaptureModes << "current" << currentStillCaptureMode;
+        //qDebug() << "m_stillCaptureModes" << m_stillCaptureModes << "current" << currentStillCaptureMode;
         m_stillCaptureMode = m_stillCaptureModes.indexOf(currentStillCaptureMode);
     } else {
         m_stillCaptureMode = -1;
     }
 
-    m_exposurePreview = exposurePreview();
-    if (m_exposurePreview) {
-        qInfo() << "Exposure preview is On";
-    } else {
-        qInfo() << "Exposure preview is Off";
-    }
-
-    m_cameraIsoAuto = isoAuto();
-    if (m_cameraIsoAuto) {
-        qInfo() << "ISO AUTO is On";
-    } else {
-        qInfo() << "ISO AUTO is Off";
-    }
-
-
-    /*
-    char* currentValue;
-
-    if (m_widgets.contains(QString(HPIS_CONFIG_KEY_SHUTTERSPEED))) {
-
-        gp_widget_get_value(m_widgets[HPIS_CONFIG_KEY_SHUTTERSPEED], &currentValue);
-        m_cameraShutterSpeed = m_cameraShutterSpeeds.indexOf(QString(currentValue));
-        qInfo() << "Current shutter speed" << currentValue << "index" << m_cameraShutterSpeed;
-    }*/
-
-    return true;
-}
-
-bool hpis::GPCamera::applyCameraSettings()
-{
-    if (m_configChanged)
+    QString currentCaptureMode;
+    gpGetRadioWidgetValue(captureModeWidgetName(), currentCaptureMode);
+    if (!currentCaptureMode.isNull())
     {
-        qDebug() << "Apply camera settings";
-        int ret = gp_camera_set_config(m_camera, m_cameraWindow, m_context);
-        if (ret < GP_OK)
+        if (currentCaptureMode == "0")
         {
-            reportError(QString("Unable to apply camera settings: %1").arg(errorCodeToString(ret)));
-            return false;
+            m_captureMode = CaptureModePhoto;
+        } else if (currentCaptureMode == "1")
+        {
+            m_captureMode = CaptureModeVideo;
         }
-        m_configChanged = false;
     }
+
+    QString currentExposurePreview;
+    gpGetRadioWidgetValue(exposurePreviewWidgetName(), currentExposurePreview);
+    if (currentExposurePreview == "1") {
+        m_exposurePreview = true;
+    } else if (currentExposurePreview == "0") {
+        m_exposurePreview = false;
+    }
+
+    QString currentIsoAuto;
+    gpGetRadioWidgetValue(isoAutoWidgetName(), currentIsoAuto);
+    if (currentIsoAuto == "1") {
+        m_cameraIsoAuto = true;
+    } else if (currentIsoAuto == "0") {
+        m_cameraIsoAuto = false;
+    }
+
+    int currentViewFinder;
+    gpGetToggleWidgetValue(viewfinderWidgetName(), &currentViewFinder);
+    if (currentViewFinder == 1)
+    {
+        m_viewfinder = true;
+    } else {
+        m_viewfinder = false;
+    }
+
     return true;
 }
 
@@ -487,8 +534,16 @@ bool hpis::GPCamera::refreshWidget(const QString& widgetName)
     return true;
 }
 
-bool hpis::GPCamera::extractWidgetChoices(CameraWidget* widget, QList<QString>& choices)
+bool hpis::GPCamera::extractWidgetChoices(QString widgetName, QList<QString>& choices)
 {
+    int ret;
+    CameraWidget* widget;
+    ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &widget, m_context);
+    if (ret < GP_OK)
+    {
+        reportError(QString("Unable to get single config %1: %2").arg(widgetName, errorCodeToString(ret)));
+        return false;
+    }
     choices.clear();
 
     const char* choiceLabel;
@@ -508,6 +563,8 @@ bool hpis::GPCamera::extractWidgetChoices(CameraWidget* widget, QList<QString>& 
         choices.append(QString(choiceLabel));
     }
 
+    gp_widget_free(widget);
+
     return true;
 }
 
@@ -515,79 +572,93 @@ bool hpis::GPCamera::extractWidgetChoices(CameraWidget* widget, QList<QString>& 
 
 
 
-bool hpis::GPCamera::setToggleWidget(QString widgetName, int toggleValue)
+int hpis::GPCamera::gpSetToggleWidget(QString widgetName, int toggleValue)
 {
-    CameraWidget* widget = m_widgets[widgetName];
-
-    if (widget)
+    int ret;
+    CameraWidget* widget ;
+    ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &widget, m_context);
+    if (ret < GP_OK)
     {
-        int ret = gp_widget_set_value(widget, &toggleValue);
-        if (ret < GP_OK) {
-            reportError(QString("Unable to toggle widget: %1 error: %2").arg(widgetName, errorCodeToString(ret)));
-            return false;
-        }
-
-        m_configChanged = true;
-        return true;
-    } else {
-        reportError(QString("Widget not found: %1").arg(widgetName));
-        return false;
+        reportError(QString("Unable to get single config %1: %2").arg(widgetName, errorCodeToString(ret)));
+        return ret;
     }
-}
+    ret = gp_widget_set_value(widget, &toggleValue);
+    if (ret < GP_OK) {
+        reportError(QString("Unable to toggle widget: %1 error: %2").arg(widgetName, errorCodeToString(ret)));
+        return ret;
+    }
 
-bool hpis::GPCamera::setRangeWidget(QString widgetName, float rangeValue)
-{
-    CameraWidget* widget = m_widgets[widgetName];
-
-    if (widget)
-    {
-        qInfo() << "Setting value :" << rangeValue << "to widget :" << widgetName;
-        int ret = gp_widget_set_value(widget, &rangeValue);
-        if (ret < GP_OK) {
-            reportError(QString("Unable to set range value to widget: %1 error: %2").arg(widgetName, errorCodeToString(ret)));
-            return false;
-        }
-
-        m_configChanged = true;
-        return true;
-    } else {
-        reportError(QString("Widget not found: %1").arg(widgetName));
-        return false;
+    ret = gp_camera_set_single_config(m_camera, widgetName.toStdString().c_str(), widget, m_context);
+    if (ret < GP_OK) {
+        reportError(QString("Unable to set radio value to widget: %1 error: %2").arg(widgetName, errorCodeToString(ret)));
+        return ret;
     }
 
     return GP_OK;
 }
 
-bool hpis::GPCamera::setRadioWidget(QString widgetName, QString radioValue)
+int hpis::GPCamera::gpSetRangeWidget(QString widgetName, float rangeValue)
 {
-    CameraWidget* widget = m_widgets[widgetName];
-
-    gp_widget_get_child_by_name (m_cameraWindow, widgetName.toStdString().c_str(), &widget);
-
-    if (widget)
+    CameraWidget* widget;
+    int ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &widget, m_context);
+    if (ret < GP_OK)
     {
-        qInfo() << "Setting value :" << radioValue << "to widget :" << widgetName;
-        int ret = gp_widget_set_value(widget, radioValue.toStdString().c_str());
-        if (ret < GP_OK) {
-            reportError(QString("Unable to set radio value to widget: %1 error: %2").arg(widgetName, errorCodeToString(ret)));
-            return false;
-        }
+        reportError(QString("Unable to get single config %1: %2").arg(widgetName, errorCodeToString(ret)));
+        return ret;
+    }
 
-        m_configChanged = true;
-        return true;
-    } else {
-        reportError(QString("Widget not found: %1").arg(widgetName));
+    qInfo() << "Setting value :" << rangeValue << "to widget :" << widgetName;
+    ret = gp_widget_set_value(widget, &rangeValue);
+    if (ret < GP_OK) {
+        reportError(QString("Unable to set range value to widget: %1 error: %2").arg(widgetName, errorCodeToString(ret)));
         return false;
+    }
+
+    ret = gp_camera_set_single_config(m_camera, widgetName.toStdString().c_str(), widget, m_context);
+    if (ret < GP_OK) {
+        reportError(QString("Unable to set radio value to widget: %1 error: %2").arg(widgetName, errorCodeToString(ret)));
+        return ret;
     }
 
     return GP_OK;
 }
 
-bool hpis::GPCamera::setTextWidget(QString widgetName, QString textValue)
+int hpis::GPCamera::gpSetRadioWidget(QString widgetName, QString radioValue)
 {
-    CameraWidget* widget = m_widgets[widgetName];
+    CameraWidget* widget;
+    int ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &widget, m_context);
+    if (ret < GP_OK)
+    {
+        reportError(QString("Unable to get single config %1: %2").arg(widgetName, errorCodeToString(ret)));
+        return ret;
+    }
 
-    gp_widget_get_child_by_name (m_cameraWindow, widgetName.toStdString().c_str(), &widget);
+    qInfo() << "Setting value :" << radioValue << "to widget :" << widgetName;
+    ret = gp_widget_set_value(widget, radioValue.toStdString().c_str());
+    if (ret < GP_OK) {
+        reportError(QString("Unable to set radio value to widget: %1 error: %2").arg(widgetName, errorCodeToString(ret)));
+        return ret;
+    }
+
+    ret = gp_camera_set_single_config(m_camera, widgetName.toStdString().c_str(), widget, m_context);
+    if (ret < GP_OK) {
+        reportError(QString("Unable to set radio value to widget: %1 error: %2").arg(widgetName, errorCodeToString(ret)));
+        return ret;
+    }
+
+
+    return GP_OK;
+}
+
+int hpis::GPCamera::gpSetTextWidget(QString widgetName, QString textValue)
+{
+    CameraWidget* widget;
+    int ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &widget, m_context);
+    if (ret < GP_OK)
+    {
+        reportError(QString("Unable to get single config %1: %2").arg(widgetName, errorCodeToString(ret)));
+        return false;
+    }
 
     if (widget)
     {
@@ -608,154 +679,198 @@ bool hpis::GPCamera::setTextWidget(QString widgetName, QString textValue)
     return GP_OK;
 }
 
-
-
-QString hpis::GPCamera::getRadioWidgetValue(QString widgetName)
+int hpis::GPCamera::gpGetToggleWidgetValue(QString widgetName, int* value)
 {
-    CameraWidget* cameraWidget = m_widgets[widgetName];
-    if (!cameraWidget)
+    CameraWidget* cameraWidget;
+    int ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &cameraWidget, m_context);
+    if (ret < GP_OK)
     {
-        reportError(QString("Widget not found: %1").arg(widgetName));
-        return QString();
+        reportError(QString("Unable to get single config %1: %2").arg(widgetName, errorCodeToString(ret)));
+        return ret;
     }
-    const char* value;
+    gp_widget_get_value(cameraWidget, value);
+    gp_widget_free(cameraWidget);
 
-    gp_widget_get_value(cameraWidget, &value);
-
-    return QString(value);
+    return GP_OK;
 }
 
-float hpis::GPCamera::getRangeWidgetValue(QString widgetName)
+int hpis::GPCamera::gpGetRadioWidgetValue(QString widgetName, QString& value)
 {
-    CameraWidget* cameraWidget = m_widgets[widgetName];
-    if (!cameraWidget)
+    CameraWidget* cameraWidget;
+    int ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &cameraWidget, m_context);
+    if (ret < GP_OK)
     {
-        reportError(QString("Widget not found: %1").arg(widgetName));
-        return 0.0f;
+        reportError(QString("Unable to get single config %1: %2").arg(widgetName, errorCodeToString(ret)));
+        value = QString::null;
+        return ret;
     }
-    float value;
+    const char* valuePtr;
+    ret = gp_widget_get_value(cameraWidget, &valuePtr);
+    if (ret < GP_OK)
+    {
+        reportError(QString("Unable to get single config %1: %2").arg(widgetName, errorCodeToString(ret)));
+        value = QString::null;
+        return ret;
+    }
+    value = QString(valuePtr);
+    gp_widget_free(cameraWidget);
 
-    gp_widget_get_value(cameraWidget, &value);
+    return GP_OK;
+}
 
-    return value;
+int hpis::GPCamera::gpGetRangeWidgetValue(QString widgetName, float* value)
+{
+    CameraWidget* cameraWidget;
+    int ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &cameraWidget, m_context);
+    if (ret < GP_OK)
+    {
+        reportError(QString("Unable to get single config %1: %2").arg(widgetName, errorCodeToString(ret)));
+        return ret;
+    }
+    gp_widget_get_value(cameraWidget, value);
+    gp_widget_free(cameraWidget);
+
+    return GP_OK;
+}
+
+QString hpis::GPCamera::viewfinderWidgetName()
+{
+    return "viewfinder";
 }
 
 QString hpis::GPCamera::captureModeWidgetName()
 {
-    return "/main/other/d1a6";
+    return "d1a6";
 }
 
 QString hpis::GPCamera::apertureWidgetName()
 {
-
-    QString liveviewSelector = getRadioWidgetValue(liveviewSelectorWidgetName());
-/*    QString afMode = getRadioWidgetValue(afModeWidgetName());
-    qDebug() << "AF Mode:" << afMode;
-
-
-    QString zoomRatio = getRadioWidgetValue(lvZoomRatioWidgetName());
-    qDebug() << "Zoom ratio:" << zoomRatio;
-*/
-    if (liveviewSelector == "1")
+    QString liveviewSelector;
+    int ret = gpGetRadioWidgetValue(liveviewSelectorWidgetName(), liveviewSelector);
+    if (ret == GP_OK)
     {
-        return "/main/other/d1a9";
-    }
-    else
-    {
-        return "/main/other/5007";
+        if (liveviewSelector == "1")
+        {
+            return "d1a9";
+        }
+        else
+        {
+            return "5007";
+        }
+    } else {
+        return QString::null;
     }
 }
 
 QString hpis::GPCamera::shutterSpeedWidgetName()
 {
-
-    QString liveviewSelector = getRadioWidgetValue(liveviewSelectorWidgetName());
-
-    if (liveviewSelector == "1")
+    if (m_viewfinder)
     {
-        return "/main/other/d1a8";
-    }
-    else
-    {
-        return "/main/other/500d";
+        if (m_captureMode == CaptureModePhoto)
+        {
+            return "d100";
+        } else {
+            return "d1a8";
+        }
+        /*
+        QString liveviewSelector;
+        int ret = gpGetRadioWidgetValue(liveviewSelectorWidgetName(), liveviewSelector);
+
+        if (liveviewSelector == "1")
+        {
+            return "d1a8";
+        }
+        else
+        {
+            return "d100";
+        }
+        */
+    } else {
+        return "500d";
     }
 }
 
 QString hpis::GPCamera::isoWidgetName()
 {
+    QString liveviewSelector;
 
-    QString liveviewSelector = getRadioWidgetValue(liveviewSelectorWidgetName());
+    int ret = gpGetRadioWidgetValue(liveviewSelectorWidgetName(), liveviewSelector);
 
-    if (liveviewSelector == "1")
+    if (ret == GP_OK)
     {
-        return "/main/other/d1aa";
-    }
-    else
-    {
-        return "/main/other/500f";
+        if (liveviewSelector == "1")
+        {
+            return "d1aa";
+        }
+        else
+        {
+            return "500f";
+        }
+    } else {
+       return QString::null;
     }
 }
 
 QString hpis::GPCamera::isoAutoWidgetName()
 {
-    return "/main/other/d054";
+    return "d054";
 }
 
 
 QString hpis::GPCamera::liveviewSelectorWidgetName()
 {
-    return "/main/other/d1a6";
+    return "d1a6";
 }
 
 QString hpis::GPCamera::afModeWidgetName()
 {
-    return "/main/other/d061";
+    return "d061";
 }
 
 QString hpis::GPCamera::lvZoomRatioWidgetName()
 {
-    return "/main/other/d1a3";
+    return "d1a3";
 }
 
 QString hpis::GPCamera::exposureModeWidgetName()
 {
     // TODO
-    return "/main/other/500e";
+    return "500e";
 }
 
 QString hpis::GPCamera::afAreaWidgetName()
 {
-    return "/main/actions/changeafarea";
+    return "changeafarea";
 }
 
 QString hpis::GPCamera::afAtWidgetName()
 {
-    return "/main/other/d05d";
+    return "d05d";
 }
 
 QString hpis::GPCamera::afDriveWidgetName()
 {
-    return "/main/actions/autofocusdrive";
+    return "autofocusdrive";
 }
 
 QString hpis::GPCamera::recordingMediaWidgetName()
 {
-    return "/main/settings/recordingmedia";
+    return "recordingmedia";
 }
 
 QString hpis::GPCamera::captureTargetWidgetName()
 {
-    return "/main/settings/capturetarget";
+    return "capturetarget";
 }
 
 QString hpis::GPCamera::stillCaptureModeWidgetName()
 {
-    return "/main/capturesettings/capturemode";
+    return "capturemode";
 }
 
 QString hpis::GPCamera::exposurePreviewWidgetName()
 {
-    return "/main/other/d1a5";
+    return "d1a5";
 }
 
 hpis::Camera::CaptureMode hpis::GPCamera::captureMode()
@@ -765,106 +880,166 @@ hpis::Camera::CaptureMode hpis::GPCamera::captureMode()
 
 QString hpis::GPCamera::aperture()
 {
-    return getRadioWidgetValue(apertureWidgetName());
+    if (m_cameraAperture > -1 && m_cameraAperture < m_cameraApertures.size())
+    {
+        return m_cameraApertures[m_cameraAperture];
+    } else {
+        return QString::null;
+    }
 }
 
 QString hpis::GPCamera::shutterSpeed()
 {
-    return getRadioWidgetValue(shutterSpeedWidgetName());
+    if (m_cameraShutterSpeed > -1 && m_cameraShutterSpeed < m_cameraShutterSpeeds.size())
+    {
+        return m_cameraShutterSpeeds[m_cameraShutterSpeed];
+    } else {
+        return QString::null;
+    }
 }
 
 QString hpis::GPCamera::iso()
 {
-    return getRadioWidgetValue(isoWidgetName());
+    if (m_cameraIso > -1 && m_cameraIso < m_cameraIsos.size())
+    {
+        return m_cameraIsos[m_cameraIso];
+    } else {
+        return QString::null;
+    }
 }
 
 bool hpis::GPCamera::isoAuto()
 {
-    QString currentIsoAuto = getRadioWidgetValue(isoAutoWidgetName());
-    if (QString("1") == currentIsoAuto) {
-        return true;
-    } else {
-        return false;
-    }
+    return m_cameraIsoAuto;
 }
 
 bool hpis::GPCamera::setIsoAuto(bool isoAuto)
 {
+    int ret;
     if (isoAuto)
     {
-        return setRadioWidget(isoAutoWidgetName(), QString("1"));
+        ret = gpSetRadioWidget(isoAutoWidgetName(), QString("1"));
     }
     else
     {
-        return setRadioWidget(isoAutoWidgetName(), QString("0"));
+        ret = gpSetRadioWidget(isoAutoWidgetName(), QString("0"));
+    }
+
+    if (ret == GP_OK)
+    {
+        m_cameraIsoAuto = isoAuto;
+        return true;
+    } else {
+        return false;
     }
 }
 
 QString hpis::GPCamera::exposureMode()
 {
-    return getRadioWidgetValue(exposureModeWidgetName());
+    if (m_exposureMode > -1 && m_exposureMode < m_exposureModes.size())
+    {
+        return m_exposureModes[m_exposureMode];
+    } else {
+        return QString::null;
+    }
 }
 
 QString hpis::GPCamera::lvZoomRatio()
 {
-    return getRadioWidgetValue(lvZoomRatioWidgetName());
+    if (m_lvZoomRatio > -1 && m_lvZoomRatio < m_lvZoomRatios.size())
+    {
+        return m_lvZoomRatios[m_lvZoomRatio];
+    } else {
+        return QString::null;
+    }
 }
 
 bool hpis::GPCamera::setRecordingMedia(RecordingMedia recordingMedia)
 {
-    return setRadioWidget(recordingMediaWidgetName(), m_recordingMedias[recordingMedia]);
+    int ret = gpSetRadioWidget(recordingMediaWidgetName(), m_recordingMedias[recordingMedia]);
+    if (ret == GP_OK)
+    {
+        m_recordingMedia = recordingMedia;
+        return true;
+    } else {
+        return false;
+    }
 }
 
 QString hpis::GPCamera::recordingMedia()
 {
-    return getRadioWidgetValue(recordingMediaWidgetName());
+    if (m_recordingMedia > -1 && m_recordingMedia < m_recordingMedias.size())
+    {
+        return m_recordingMedias[m_recordingMedia];
+    } else {
+        return QString::null;
+    }
 }
 
 bool hpis::GPCamera::setCaptureTarget(CaptureTarget captureTarget)
 {
-    return setRadioWidget(captureTargetWidgetName(), m_captureTargets[captureTarget]);
+    return gpSetRadioWidget(captureTargetWidgetName(), m_captureTargets[captureTarget]);
 }
 
 QString hpis::GPCamera::captureTarget()
 {
-    return getRadioWidgetValue(captureTargetWidgetName());
+    if (m_captureTarget > -1 && m_captureTarget < m_captureTargets.size())
+    {
+        return m_captureTargets[m_captureTarget];
+    } else {
+        return QString::null;
+    }
 }
 
 bool hpis::GPCamera::setStillCaptureMode(StillCaptureMode stillCaptureMode)
 {
-    return setRadioWidget(stillCaptureModeWidgetName(), m_stillCaptureModes[stillCaptureMode]);
+    int ret = gpSetRadioWidget(stillCaptureModeWidgetName(), m_stillCaptureModes[stillCaptureMode]);
+    if (ret == GP_OK)
+    {
+        m_stillCaptureMode = stillCaptureMode;
+        return true;
+    } else {
+        return false;
+    }
 }
 
 QString hpis::GPCamera::stillCaptureMode()
 {
-    return getRadioWidgetValue(stillCaptureModeWidgetName());
+    if (m_stillCaptureMode > -1 && m_stillCaptureMode < m_stillCaptureModes.size())
+    {
+        return m_stillCaptureModes[m_stillCaptureMode];
+    } else {
+        return QString::null;
+    }
 }
 
 bool hpis::GPCamera::setExposurePreview(bool exposurePreview)
 {
+    int ret;
     if (exposurePreview)
     {
-        return setRadioWidget(exposurePreviewWidgetName(), QString("1"));
+        ret = gpSetRadioWidget(exposurePreviewWidgetName(), QString("1"));
+    } else {
+        ret = gpSetRadioWidget(exposurePreviewWidgetName(), QString("0"));
     }
-    else
+
+    if (ret == GP_OK)
     {
-        return setRadioWidget(exposurePreviewWidgetName(), QString("0"));
+        m_exposurePreview = exposurePreview;
+        return true;
+    } else {
+        return false;
     }
 }
 
 bool hpis::GPCamera::exposurePreview()
 {
-    QString currentLvExposurePreview = getRadioWidgetValue(exposurePreviewWidgetName());
-    if (QString("1") == currentLvExposurePreview) {
-        return true;
-    } else {
-        return false;
-    }
-
+    return m_exposurePreview;
 }
 
 bool hpis::GPCamera::setCaptureMode(CaptureMode captureMode)
 {
+    int ret;
     QString value;
     switch (captureMode)
     {
@@ -878,7 +1053,15 @@ bool hpis::GPCamera::setCaptureMode(CaptureMode captureMode)
 
     if (!value.isNull())
     {
-        return setRadioWidget(captureModeWidgetName(), value);
+        ret = gpSetRadioWidget(captureModeWidgetName(), value);
+    } else {
+        return false;
+    }
+
+    if (ret == GP_OK)
+    {
+        m_captureMode = captureMode;
+        return true;
     } else {
         return false;
     }
@@ -886,13 +1069,17 @@ bool hpis::GPCamera::setCaptureMode(CaptureMode captureMode)
 
 bool hpis::GPCamera::increaseAperture()
 {
-    readCameraSettings();
-
     if (m_cameraAperture < m_cameraApertures.length() - 1)
     {
-        setRadioWidget(apertureWidgetName(), m_cameraApertures[m_cameraAperture + 1]);
-        readCameraSettings();
-        return true;
+        int ret = gpSetRadioWidget(apertureWidgetName(), m_cameraApertures[m_cameraAperture + 1]);
+
+        if (ret == GP_OK)
+        {
+            m_cameraAperture = m_cameraAperture + 1;
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
@@ -900,13 +1087,16 @@ bool hpis::GPCamera::increaseAperture()
 
 bool hpis::GPCamera::decreaseAperture()
 {
-    readCameraSettings();
-
     if (m_cameraAperture > 0)
     {
-        setRadioWidget(apertureWidgetName(), m_cameraApertures[m_cameraAperture - 1]);
-        readCameraSettings();
-        return true;
+        int ret = gpSetRadioWidget(apertureWidgetName(), m_cameraApertures[m_cameraAperture - 1]);
+        if (ret == GP_OK)
+        {
+            m_cameraAperture = m_cameraAperture - 1;
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
@@ -914,13 +1104,16 @@ bool hpis::GPCamera::decreaseAperture()
 
 bool hpis::GPCamera::increaseShutterSpeed()
 {
-    readCameraSettings();
-
     if (m_cameraShutterSpeed < m_cameraShutterSpeeds.length() - 1)
     {
-        setRadioWidget(shutterSpeedWidgetName(), m_cameraShutterSpeeds[m_cameraShutterSpeed + 1]);
-        readCameraSettings();
-        return true;
+        int ret = gpSetRadioWidget(shutterSpeedWidgetName(), m_cameraShutterSpeeds[m_cameraShutterSpeed + 1]);
+        if (ret == GP_OK)
+        {
+            m_cameraShutterSpeed = m_cameraShutterSpeed + 1;
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
@@ -928,13 +1121,16 @@ bool hpis::GPCamera::increaseShutterSpeed()
 
 bool hpis::GPCamera::decreaseShutterSpeed()
 {
-    readCameraSettings();
-
     if (m_cameraShutterSpeed > 0)
     {
-        setRadioWidget(shutterSpeedWidgetName(), m_cameraShutterSpeeds[m_cameraShutterSpeed - 1]);
-        readCameraSettings();
-        return true;
+        int ret = gpSetRadioWidget(shutterSpeedWidgetName(), m_cameraShutterSpeeds[m_cameraShutterSpeed - 1]);
+        if (ret == GP_OK)
+        {
+            m_cameraShutterSpeed = m_cameraShutterSpeed - 1;
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
@@ -942,13 +1138,16 @@ bool hpis::GPCamera::decreaseShutterSpeed()
 
 bool hpis::GPCamera::increaseIso()
 {
-    readCameraSettings();
-
     if (m_cameraIso < m_cameraIsos.length() - 1)
     {
-        setRadioWidget(isoWidgetName(), m_cameraIsos[m_cameraIso + 1]);
-        readCameraSettings();
-        return true;
+        int ret = gpSetRadioWidget(isoWidgetName(), m_cameraIsos[m_cameraIso + 1]);
+        if (ret == GP_OK)
+        {
+            m_cameraIso = m_cameraIso + 1;
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
@@ -956,13 +1155,16 @@ bool hpis::GPCamera::increaseIso()
 
 bool hpis::GPCamera::decreaseIso()
 {
-    readCameraSettings();
-
     if (m_cameraIso > 0)
     {
-        setRadioWidget(isoWidgetName(), m_cameraIsos[m_cameraIso - 1]);
-        readCameraSettings();
-        return true;
+        int ret = gpSetRadioWidget(isoWidgetName(), m_cameraIsos[m_cameraIso - 1]);
+        if (ret == GP_OK)
+        {
+            m_cameraIso = m_cameraIso - 1;
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
@@ -971,13 +1173,16 @@ bool hpis::GPCamera::decreaseIso()
 
 bool hpis::GPCamera::exposureModePlus()
 {
-    readCameraSettings();
-
     if (m_exposureMode < m_exposureModes.length() - 1)
     {
-        setRadioWidget(exposureModeWidgetName(), m_exposureModes[m_exposureMode + 1]);
-        readCameraSettings();
-        return true;
+        int ret = gpSetRadioWidget(exposureModeWidgetName(), m_exposureModes[m_exposureMode + 1]);
+        if (ret == GP_OK)
+        {
+            m_exposureMode = m_exposureMode - 1;
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
@@ -985,13 +1190,16 @@ bool hpis::GPCamera::exposureModePlus()
 
 bool hpis::GPCamera::exposureModeMinus()
 {
-    readCameraSettings();
-
     if (m_exposureMode > 0)
     {
-        setRadioWidget(exposureModeWidgetName(), m_exposureModes[m_exposureMode - 1]);
-        readCameraSettings();
-        return true;
+        int ret = gpSetRadioWidget(exposureModeWidgetName(), m_exposureModes[m_exposureMode - 1]);
+        if (ret == GP_OK)
+        {
+            m_exposureMode = m_exposureMode - 1;
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
@@ -1001,13 +1209,16 @@ bool hpis::GPCamera::exposureModeMinus()
 
 bool hpis::GPCamera::increaseLvZoomRatio()
 {
-    readCameraSettings();
-
     if (m_lvZoomRatio < m_lvZoomRatios.length() - 1)
     {
-        setRadioWidget(lvZoomRatioWidgetName(), m_lvZoomRatios[m_lvZoomRatio + 1]);
-        readCameraSettings();
-        return true;
+        int ret = gpSetRadioWidget(lvZoomRatioWidgetName(), m_lvZoomRatios[m_lvZoomRatio + 1]);
+        if (ret == GP_OK)
+        {
+            m_lvZoomRatio = m_lvZoomRatio + 1;
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
@@ -1015,13 +1226,16 @@ bool hpis::GPCamera::increaseLvZoomRatio()
 
 bool hpis::GPCamera::decreaseLvZoomRatio()
 {
-    readCameraSettings();
-
     if (m_lvZoomRatio > 0)
     {
-        setRadioWidget(lvZoomRatioWidgetName(), m_lvZoomRatios[m_lvZoomRatio - 1]);
-        readCameraSettings();
-        return true;
+        int ret = gpSetRadioWidget(lvZoomRatioWidgetName(), m_lvZoomRatios[m_lvZoomRatio - 1]);
+        if (ret == GP_OK)
+        {
+            m_lvZoomRatio = m_lvZoomRatio - 1;
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
@@ -1033,11 +1247,11 @@ bool hpis::GPCamera::changeAfArea(int x, int y)
     //setRadioWidget(afModeWidgetName(), "0");
     //applyCameraSettings();
     QString textValue = QString().sprintf("%dx%d", x * 7360 / 640, y * 4912 / 426);
-    setTextWidget(afAreaWidgetName(), textValue);
-    applyCameraSettings();
+    gpSetTextWidget(afAreaWidgetName(), textValue);
+    //applyCameraSettings();
     //refreshCameraSettings();
-    setToggleWidget(afDriveWidgetName(), 1);
-    setToggleWidget(afDriveWidgetName(), 0);
-    applyCameraSettings();
+    gpSetToggleWidget(afDriveWidgetName(), 1);
+    gpSetToggleWidget(afDriveWidgetName(), 0);
+    //applyCameraSettings();
     return true;
 }

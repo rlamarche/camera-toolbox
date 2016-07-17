@@ -60,16 +60,16 @@ CameraThread::Command CameraThread::Command::changeAfArea(int x, int y)
 CameraThread::CameraThread(hpis::Camera* camera, QObject *parent) : QThread(parent),
     m_camera(camera), m_stop(false), m_liveview(false), m_recording(false), m_decoderThread(0)
 {
-    refreshTimeoutMs = 1000;
+    refreshTimeoutMs = 2000;
 }
 
 
-void CameraThread::init()
+bool CameraThread::init()
 {
     m_decoderThread = new DecoderThread(this);
     m_decoderThread->start();
 
-    m_camera->init();
+    return m_camera->init();
 }
 
 void CameraThread::shutdown()
@@ -79,85 +79,14 @@ void CameraThread::shutdown()
     m_decoderThread->wait();
 }
 
-/*
-int CameraThread::lookupWidgets(CameraWidget* widget) {
-    int n = gp_widget_count_children(widget);
-    CameraWidget* child;
-    const char* widgetName;
-
-    gp_widget_get_name(widget, &widgetName);
-    qDebug() << "Found widget" << widgetName;
-
-    m_widgets[widgetName] = widget;
-
-    for (int i = 0; i < n; i ++) {
-        int ret = gp_widget_get_child(widget, i, &child);
-        if (ret < GP_OK) {
-            return ret;
-        }
-
-        ret = lookupWidgets(child);
-        if (ret < GP_OK) {
-            return ret;
-        }
-    }
-
-    return GP_OK;
-}
-
-void CameraThread::extractCameraCapabilities()
-{
-    if (m_widgets.contains(QString(HPIS_CONFIG_KEY_APERTURE))) {
-        m_cameraApertures = extractWidgetChoices(m_widgets[HPIS_CONFIG_KEY_APERTURE]);
-    }
-    if (m_widgets.contains(QString(HPIS_CONFIG_KEY_SHUTTERSPEED))) {
-        m_cameraShutterSpeeds = extractWidgetChoices(m_widgets[HPIS_CONFIG_KEY_SHUTTERSPEED]);
-    }
-}
-
-void CameraThread::refreshCameraSettings()
-{
-    char* currentValue;
-
-    if (m_widgets.contains(QString(HPIS_CONFIG_KEY_APERTURE))) {
-
-        gp_widget_get_value(m_widgets[HPIS_CONFIG_KEY_APERTURE], &currentValue);
-        m_cameraAperture = m_cameraApertures.indexOf(QString(currentValue));
-        qInfo() << "Current aperture" << currentValue << "index" << m_cameraAperture;
-    }
-
-    if (m_widgets.contains(QString(HPIS_CONFIG_KEY_SHUTTERSPEED))) {
-
-        gp_widget_get_value(m_widgets[HPIS_CONFIG_KEY_SHUTTERSPEED], &currentValue);
-        m_cameraShutterSpeed = m_cameraShutterSpeeds.indexOf(QString(currentValue));
-        qInfo() << "Current shutter speed" << currentValue << "index" << m_cameraShutterSpeed;
-    }
-}
-
-QList<QString> CameraThread::extractWidgetChoices(CameraWidget* widget)
-{
-    QList<QString> choices;
-
-    const char* choiceLabel;
-    int n = gp_widget_count_choices(widget);
-
-    for (int i = 0; i < n; i ++) {
-        gp_widget_get_choice(widget, i, &choiceLabel);
-        choices.append(QString(choiceLabel));
-
-        qInfo() << "Found choice :" << QString(choiceLabel);
-    }
-
-    return choices;
-}
-*/
-
-
 
 void CameraThread::run()
 {
     qInfo() << "Start camera thread";
-    init();
+    if (!init()) {
+        shutdown();
+        return;
+    }
 
     Command command;
     QTime time;
@@ -168,7 +97,7 @@ void CameraThread::run()
         if (time.elapsed() > refreshTimeoutMs)
         {
             time.restart();
-//            m_camera->refreshCameraSettings();
+            m_camera->readCameraSettings();
             emit cameraStatus(m_camera->status());
         }
         /*
@@ -198,7 +127,7 @@ void CameraThread::run()
                 command = m_commandQueue.dequeue();
                 doCommand(command);
             }
-            m_camera->applyCameraSettings();
+            //m_camera->applyCameraSettings();
         }
         m_mutex.unlock();
 
@@ -291,6 +220,7 @@ void CameraThread::doCommand(Command command)
     int ret;
     switch (command.type()) {
     case CommandStartLiveview:
+        m_camera->startLiveView();
         m_liveview = true;
         /*
         ret = setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 1);
@@ -301,6 +231,8 @@ void CameraThread::doCommand(Command command)
         break;
 
     case CommandStopLiveview:
+        m_liveview = false;
+        m_camera->stopLiveview();
         /*
         ret = setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 0);
         if (ret == GP_OK) {
@@ -309,6 +241,13 @@ void CameraThread::doCommand(Command command)
         */
         break;
     case CommandToggleLiveview:
+        if (m_liveview)
+        {
+            m_camera->stopLiveview();
+        } else {
+            m_camera->startLiveView();
+        }
+
         m_liveview = !m_liveview;
         /*
         if (m_liveview) {
@@ -390,16 +329,21 @@ void CameraThread::doCommand(Command command)
         break;
 
     case CommandStartMovie:
-        /*
+
         if (m_recording) {
-            ret = setToggleWidget(HPIS_CONFIG_KEY_STOP_MOVIE, 1);
+            if (m_camera->stopRecordMovie())
+            {
+                m_recording = false;
+            }
+            //ret = setToggleWidget(HPIS_CONFIG_KEY_STOP_MOVIE, 1);
         } else {
-            ret = setToggleWidget(HPIS_CONFIG_KEY_START_MOVIE, 1);
+            if (m_camera->startRecordMovie())
+            {
+                m_recording = true;
+            }
+            //ret = setToggleWidget(HPIS_CONFIG_KEY_START_MOVIE, 1);
         }
-        if (ret == GP_OK) {
-            m_recording = !m_recording;
-        }
-        */
+
         break;
 
     case CommandCapturePhoto:

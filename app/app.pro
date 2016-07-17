@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui #declarative
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -20,7 +20,9 @@ SOURCES += \
     camerapreview.cpp \
     gphoto/gpcamerapreview.cpp \
     gphoto/gpcamera.cpp \
-    camerastatus.cpp
+    camerastatus.cpp \
+#    histogram/imageanalyzer.cpp \
+#    histogram/histogram.cpp
 
 
 
@@ -32,10 +34,12 @@ HEADERS  += mainwindow.h \
     camerapreview.h \
     gphoto/gpcamerapreview.h \
     gphoto/gpcamera.h \
-    camerastatus.h
+    camerastatus.h \
+#    histogram/imageanalyzer.h \
+#    histogram/histogram.h
 
 
-INCLUDEPATH = ../vendor/libgphoto2 ../vendor/libgphoto2/libgphoto2_port
+INCLUDEPATH += ../vendor/libgphoto2 ../vendor/libgphoto2/libgphoto2_port
 #LIBS     += -lgphoto2_port -lgphoto2
 LIBS += \
         -L../libgphoto2 -llibgphoto2 \
@@ -44,21 +48,18 @@ LIBS += \
 
 
 DEFINES += _GPHOTO2_INTERNAL_CODE
-
+DEFINES += USE_LIBTURBOJPEG
 
 defined(USE_LIBJPEG) {
 LIBS += -ljpeg
 }
 
-defined(USE_LIBTURBOJPEG) {
+#defined(USE_LIBTURBOJPEG) {
 LIBS += -lturbojpeg
-}
+#}
 
 
-
-
-
-
+#USE_RPI=true
 
 
 defined(USE_RPI) {
@@ -66,6 +67,7 @@ defined(USE_RPI) {
     #DEFINES += USE_OPENGL USE_EGL IS_RPI USE_OPENMAX USE_VCHIQ_ARM VERBOSE
     #DEFINES += VERBOSE
 
+    DEFINES += USE_RPI
     DEFINES += HAVE_LIBOPENMAX=2 OMX OMX_SKIP64BIT USE_EXTERNAL_OMX HAVE_LIBBCM_HOST USE_EXTERNAL_LIBBCM_HOST USE_VCHIQ_ARM
 
     SOURCES += \
@@ -98,8 +100,8 @@ defined(USE_RPI) {
 
     LIBS += -lopenmaxil -lbcm_host -lvcos -lvchiq_arm -lpthread -lrt
 
-    target.path = /home/pi
-    INSTALLS += target
-
-    CONFIG += staticlib
 }
+
+target.path = /home/pi
+INSTALLS += target
+

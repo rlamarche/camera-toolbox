@@ -15,10 +15,10 @@ SOURCES = \
 HEADERS = \
         ../vendor/libgphoto2/libgphoto2_port/libgphoto2_port/gphoto2-port-info.h \
 
-INCLUDEPATH = \
+INCLUDEPATH += \
     ../vendor/libgphoto2/libgphoto2_port
 
-QMAKE_CFLAGS = -g -O2 -Wall -Wmissing-declarations -Wmissing-prototypes -fPIC
+QMAKE_CFLAGS += -g -O2 -Wall -Wmissing-declarations -Wmissing-prototypes -fPIC
 
 DEFINES += \
         LOCALEDIR=\\\"locale\\\" \

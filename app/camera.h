@@ -25,11 +25,14 @@ public:
     virtual void shutdown() = 0;
 
     virtual bool readCameraSettings() = 0;
-    virtual bool applyCameraSettings() = 0;
-
 
     virtual bool capturePreview(CameraPreview** cameraPreview) = 0;
     virtual bool capturePhoto() = 0;
+    virtual bool startRecordMovie() = 0;
+    virtual bool stopRecordMovie() = 0;
+
+    virtual bool startLiveView() = 0;
+    virtual bool stopLiveview() = 0;
 
     virtual bool setCaptureMode(CaptureMode captureMode) = 0;
     virtual CaptureMode captureMode() = 0;

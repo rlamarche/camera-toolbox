@@ -36,6 +36,14 @@ public:
         StillCaptureModeQuiet
     };
 
+    enum ExposureMode {
+        ExposureModeP = 0,
+        ExposureModeA,
+        ExposureModeS,
+        ExposureModeM
+        // TODO add scene modes
+    };
+
 
     explicit GPCamera(QString cameraModel, QString cameraPort, QObject *parent = 0);
     ~GPCamera();
@@ -44,12 +52,18 @@ public:
     void shutdown();
     bool capturePreview(CameraPreview** cameraPreview);
     bool capturePhoto();
+    bool startRecordMovie();
+    bool stopRecordMovie();
     bool readCameraSettings();
-    bool applyCameraSettings();
 
+    bool startLiveView();
+    bool stopLiveview();
 
     bool setCaptureMode(CaptureMode captureMode);
     CaptureMode captureMode();
+
+    //bool setExposureMode(ExposureMode exposureMode);
+    //ExposureMode exposureMode();
 
     QString aperture();
     QString shutterSpeed();
@@ -98,20 +112,23 @@ protected:
     bool refreshWidget(const QString& widgetName);
 
 
-    bool extractWidgetChoices(CameraWidget* widget, QList<QString>& choice);
+    bool extractWidgetChoices(QString widgetName, QList<QString>& choice);
 
 
     // get widget value
-    QString getRadioWidgetValue(QString widgetName);
-    float getRangeWidgetValue(QString widgetName);
+    int gpGetToggleWidgetValue(QString widgetName, int* value);
+    int gpGetRadioWidgetValue(QString widgetName, QString& value);
+    int gpGetRangeWidgetValue(QString widgetName, float* value);
 
     // set widget
-    bool setToggleWidget(QString widgetName, int toggleValue);
-    bool setRangeWidget(QString widgetName, float rangeValue);
-    bool setRadioWidget(QString widgetName, QString radioValue);
-    bool setTextWidget(QString widgetName, QString textValue);
+    int gpSetToggleWidget(QString widgetName, int toggleValue);
+    int gpSetRangeWidget(QString widgetName, float rangeValue);
+    int gpSetRadioWidget(QString widgetName, QString radioValue);
+    int gpSetTextWidget(QString widgetName, QString textValue);
 
     // widget names
+    virtual QString viewfinderWidgetName();
+
     virtual QString captureModeWidgetName();
 
     virtual QString apertureWidgetName();
@@ -186,6 +203,8 @@ private:
 
     QList<QString> m_stillCaptureModes;
     int m_stillCaptureMode;
+
+    bool m_viewfinder;
 
     bool m_exposurePreview;
 signals:

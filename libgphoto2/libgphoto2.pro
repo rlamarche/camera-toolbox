@@ -36,7 +36,7 @@ LIBS += \
         -L../libgphoto2_port -llibgphoto2_port \
         -lltdl -lexif
 
-QMAKE_CFLAGS = -g -O2 -Wall -Wmissing-declarations -Wmissing-prototypes -fPIC
+QMAKE_CFLAGS += -g -O2 -Wall -Wmissing-declarations -Wmissing-prototypes -fPIC
 
 DEFINES += \
         LOCALEDIR=\\\"locale\\\" \

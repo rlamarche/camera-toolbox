@@ -74,7 +74,8 @@ void DecoderThread::doDecodePreview()
 #ifdef USE_RPI
     image = decodeImageGPU(data, size);
 #else
-    image.loadFromData((const uchar*) data, (int) size, "JPG");
+    image = decodeImageTurbo((const char*) data, (int) size);
+    //image.loadFromData((const uchar*) data, (int) size, "JPG");
 #endif
 
     delete m_cameraPreview;

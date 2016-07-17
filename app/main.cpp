@@ -25,6 +25,7 @@
 #endif
 
 #include <sys/time.h>
+#include <ltdl.h>
 
 /* time zero for debug log time stamps */
 static struct timeval glob_tv_zero = { 0, 0 };

@@ -95,7 +95,7 @@ protected:
     void run();
 
     // Init & Shutdown
-    void init();
+    bool init();
     void shutdown();
     /*
     bool lookupCamera();
