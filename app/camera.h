@@ -54,6 +54,8 @@ public:
     virtual bool increaseShutterSpeed() = 0;
     virtual bool decreaseShutterSpeed() = 0;
 
+    virtual bool setIso(QString iso) = 0;
+
     virtual bool increaseIso() = 0;
     virtual bool decreaseIso() = 0;
 

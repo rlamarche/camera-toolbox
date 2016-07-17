@@ -23,6 +23,7 @@ SOURCES += \
     camerastatus.cpp \
 #    histogram/imageanalyzer.cpp \
 #    histogram/histogram.cpp
+    cameraserver.cpp
 
 
 
@@ -37,6 +38,7 @@ HEADERS  += mainwindow.h \
     camerastatus.h \
 #    histogram/imageanalyzer.h \
 #    histogram/histogram.h
+    cameraserver.h
 
 
 INCLUDEPATH += ../vendor/libgphoto2 ../vendor/libgphoto2/libgphoto2_port ../vendor/qhttp/src

@@ -39,6 +39,11 @@ int hpis::CameraThread::Command::y()
     return m_y;
 }
 
+QString hpis::CameraThread::Command::value()
+{
+    return m_value;
+}
+
 hpis::CameraThread::CommandType hpis::CameraThread::Command::type()
 {
     return m_commandType;
@@ -49,6 +54,14 @@ hpis::CameraThread::Command hpis::CameraThread::Command::changeAfArea(int x, int
     Command command(hpis::CameraThread::CommandChangeAfArea);
     command.m_x = x;
     command.m_y = y;
+
+    return command;
+}
+
+hpis::CameraThread::Command hpis::CameraThread::Command::setIso(QString value)
+{
+    Command command(hpis::CameraThread::CommandSetIso);
+    command.m_value = value;
 
     return command;
 }
@@ -232,6 +245,9 @@ void hpis::CameraThread::doCommand(Command command)
         m_camera->decreaseShutterSpeed();
         break;
 
+    case CommandSetIso:
+        m_camera->setIso(command.value());
+        break;
     case CommandIncreaseIso:
         m_camera->increaseIso();
         break;

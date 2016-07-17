@@ -91,6 +91,7 @@ public:
     bool increaseShutterSpeed();
     bool decreaseShutterSpeed();
 
+    bool setIso(QString iso);
     bool increaseIso();
     bool decreaseIso();
 

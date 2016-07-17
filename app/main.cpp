@@ -29,8 +29,13 @@
 #include <ltdl.h>
 
 
+// HPIS
+#include "camerathread.h"
+#include "cameraserver.h"
+
 // Server
 #include <qhttpserver.hpp>
+#include <qhttpserverrequest.hpp>
 #include <qhttpserverresponse.hpp>
 
 
@@ -222,16 +227,22 @@ int main(int argc, char *argv[])
     {
         hpis::CameraThread cameraThread(camera);
         MainWindow w(&cameraThread);
+        hpis::CameraServer cameraServer(&cameraThread);
+
         cameraThread.start();
 
         w.show();
 
-
+/*
         using namespace qhttp::server;
+
 
         QHttpServer server(&a);
         // listening on 0.0.0.0:8080
         server.listen(QHostAddress::Any, 8080, [](QHttpRequest* req, QHttpResponse* res) {
+
+            qInfo() << "Url" << req->url();
+
 
             res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
             res->addHeader("connection", "close");      // it's the default header, this line can be omitted.
@@ -244,7 +255,7 @@ int main(int argc, char *argv[])
         if ( !server.isListening() ) {
             fprintf(stderr, "failed. can not listen at port 8080!\n");
             return -1;
-        }
+        }*/
 
         return a.exec();
     }

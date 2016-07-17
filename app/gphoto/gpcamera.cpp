@@ -1021,6 +1021,24 @@ bool hpis::GPCamera::decreaseShutterSpeed()
     }
 }
 
+bool hpis::GPCamera::setIso(QString iso)
+{
+    int i = m_cameraIsos.indexOf(iso);
+    if (i == -1)
+    {
+        return false;
+    }
+
+    int ret = gpSetRadioWidget(isoWidgetName(), m_cameraIsos[i]);
+    if (ret == GP_OK)
+    {
+        m_cameraIso = i;
+        return true;
+    } else {
+        return false;
+    }
+}
+
 bool hpis::GPCamera::increaseIso()
 {
     if (m_cameraIso < m_cameraIsos.length() - 1)

@@ -33,6 +33,7 @@ public:
         CommandDecreaseShutterSpeed,
         CommandIncreaseIso,
         CommandDecreaseIso,
+        CommandSetIso,
         CommandEnableIsoAuto,
         CommandDisableIsoAuto,
         CommandExposureModePlus,
@@ -56,14 +57,17 @@ public:
         Command();
         Command(CommandType commandType);
         static Command changeAfArea(int x, int y);
+        static Command setIso(QString value);
 
         CommandType type();
         int x();
         int y();
+        QString value();
     private:
         CommandType m_commandType;
         int m_x;
         int m_y;
+        QString m_value;
     };
 
     explicit CameraThread(hpis::Camera* camera, QObject *parent = 0);
