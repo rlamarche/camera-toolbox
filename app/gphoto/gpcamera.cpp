@@ -85,8 +85,7 @@ bool hpis::GPCamera::init()
         return false;
     }
 
-    refreshCameraSettings();
-
+    readCameraSettings();
 
     setRecordingMedia(RecordingMediaCard);
     setCaptureTarget(CaptureTargetCard);
@@ -310,86 +309,6 @@ QString hpis::GPCamera::errorCodeToString(int errorCode)
     }
 }
 
-bool hpis::GPCamera::lookupWidgets(CameraWidget *widget, QString path)
-{
-    int n = gp_widget_count_children(widget);
-    if (n < GP_OK) {
-        reportError(QString("Unable to count widget children: %1").arg(errorCodeToString(n)));
-        return false;
-    }
-
-    CameraWidget* child;
-    const char* widgetName;
-    const char* widgetLabel;
-    const char* widgetInfo;
-    int widgetId;
-
-
-    int ret = gp_widget_get_name(widget, &widgetName);
-    if (ret < GP_OK) {
-        reportError(QString("Unable to get widget name: %1").arg(errorCodeToString(ret)));
-        return false;
-    }
-
-    ret = gp_widget_get_label(widget, &widgetLabel);
-    if (ret < GP_OK) {
-        reportError(QString("Unable to get widget label: %1").arg(errorCodeToString(ret)));
-        return false;
-    }
-
-    ret = gp_widget_get_info(widget, &widgetInfo);
-    if (ret < GP_OK) {
-        reportError(QString("Unable to get widget info: %1").arg(errorCodeToString(ret)));
-        return false;
-    }
-
-    ret = gp_widget_get_id(widget, &widgetId);
-    if (ret < GP_OK) {
-        reportError(QString("Unable to get widget id: %1").arg(errorCodeToString(ret)));
-        return false;
-    }
-
-
-    path = path.append("/").append(widgetName);
-
-#ifdef QT_DEBUG
-    qDebug() << "Found widget:" << path << "with label:" << widgetLabel << "and id:" << widgetId;
-#endif
-
-    m_widgets[path] = widget;
-
-    for (int i = 0; i < n; i ++) {
-        ret = gp_widget_get_child(widget, i, &child);
-        if (ret < GP_OK) {
-            reportError(QString("Unable to get widget child %1: %2").arg(QString().sprintf("%d", i), errorCodeToString(ret)));
-            return false;
-        }
-
-        if (!lookupWidgets(child, path)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-
-bool hpis::GPCamera::refreshCameraSettings()
-{
-    /*
-    int ret = gp_camera_get_config(m_camera, &m_cameraWindow, m_context);
-    lookupWidgets(m_cameraWindow, QString());
-    if (ret < GP_OK) {
-        reportError(QString("Unable to get camera config: %1").arg(errorCodeToString(ret)));
-        return false;
-    }
-    */
-
-
-
-    return readCameraSettings();
-}
-
 bool hpis::GPCamera::readCameraSettings()
 {
     QString currentCaptureMode;
@@ -525,22 +444,6 @@ bool hpis::GPCamera::readCameraSettings()
         m_viewfinder = true;
     } else {
         m_viewfinder = false;
-    }
-
-    return true;
-}
-
-bool hpis::GPCamera::refreshWidget(const QString& widgetName)
-{
-    if (m_widgets.contains(widgetName)) {
-        //gp_widget_free(m_widgets[widgetName]);
-        //gp_camera_get_config(m_camera, &(m_widgets[widgetName]), m_context);
-
-        const char* valueStr;
-        gp_widget_get_value(m_widgets[widgetName], (void*)&valueStr);
-        qInfo() << "Aperture:" << valueStr;
-        //m_cameraAperture = m_cameraApertures.indexOf(QString(currentValue));
-        //qInfo() << "Current aperture" << currentValue << "index" << m_cameraAperture;
     }
 
     return true;

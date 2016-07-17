@@ -107,13 +107,8 @@ protected:
     QString errorCodeToString(int errorCode);
 
     bool lookupWidgets(CameraWidget* widget, QString path);
-    bool refreshCameraSettings();
-
-    bool refreshWidget(const QString& widgetName);
-
 
     bool extractWidgetChoices(QString widgetName, QList<QString>& choice);
-
 
     // get widget value
     int gpGetToggleWidgetValue(QString widgetName, int* value);
@@ -166,9 +161,6 @@ private:
 
     // Camera state
     bool m_configChanged;
-
-    // Camera widgets
-    QMap<QString, CameraWidget*> m_widgets;
 
     // Camera infos
     CameraAbilities m_cameraAbilities;
