@@ -12,11 +12,9 @@
 
 #include <iostream>
 
-MainWindow::MainWindow(hpis::Camera* camera) :
+MainWindow::MainWindow(hpis::CameraThread* cameraThread) :
     QOpenGLWindow(), m_liveviewTimer(0), m_fps(0)
 {
-    camera->setParent(this);
-
 #ifdef USE_RPI
     m_overscanLeft = -32;
     m_overscanRight = -32;
@@ -29,8 +27,7 @@ MainWindow::MainWindow(hpis::Camera* camera) :
     m_overscanBottom = -32;
 #endif
 
-    m_cameraThread = new CameraThread(camera, this);
-
+    m_cameraThread = cameraThread;
 
     //m_imageAnalyzer = new ImageAnalyzer();
     //m_histogramDisplay = new HistogramDisplay();
@@ -38,8 +35,7 @@ MainWindow::MainWindow(hpis::Camera* camera) :
     //m_histogramDisplay->setImageAnalyzer(m_imageAnalyzer);
 
     connect(m_cameraThread, SIGNAL(imageAvailable(QImage)), this, SLOT(showImage(QImage)));
-    connect(m_cameraThread, SIGNAL(cameraStatus(hpis::CameraStatus)), this, SLOT(cameraStatus(hpis::CameraStatus)));
-    m_cameraThread->start();
+    connect(m_cameraThread, SIGNAL(cameraStatus(hpis::CameraThread::CameraStatus)), this, SLOT(cameraStatus(hpis::CameraThread::CameraStatus)));
 }
 
 MainWindow::~MainWindow()
@@ -102,56 +98,6 @@ void MainWindow::cameraStatus(hpis::CameraStatus cameraStatus)
     update();
 }
 
-/*
-int MainWindow::setToggleWidget(QString widgetName, int toggleValue)
-{
-    CameraWidget* widget = m_widgets[widgetName];
-
-    if (widget)
-    {
-        int ret = gp_widget_set_value(widget, &toggleValue);
-        if (ret < GP_OK) {
-            qWarning() << "Unable to toggle widget :" << widgetName;
-        }
-        return ret;
-    } else {
-        qWarning() << "Widget not found :" << widgetName;
-        return -1;
-    }
-
-    return GP_OK;
-}
-
-int MainWindow::setRangeWidget(QString widgetName, float rangeValue)
-{
-    CameraWidget* widget = m_widgets[widgetName];
-
-    if (widget)
-    {
-        int ret = gp_widget_set_value(widget, &rangeValue);
-        if (ret < GP_OK) {
-            qWarning() << "Unable to set range value to widget :" << widgetName;
-        }
-
-        return ret;
-    } else {
-        qWarning() << "Widget not found :" << widgetName;
-        return -1;
-    }
-
-    return GP_OK;
-}
-
-int MainWindow::updateConfig()
-{
-    int ret = gp_camera_set_config(m_camera, m_cameraWindow, m_context);
-    if (ret < GP_OK) {
-        qWarning() << "Unable to update camera config";
-    }
-    return ret;
-}
-*/
-
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key()) {
@@ -160,74 +106,74 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         break;
 
     case Qt::Key_Enter:
-        m_cameraThread->executeCommand(CameraThread::CommandToggleLiveview);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandToggleLiveview);
         break;
 
     case Qt::Key_C:
-        m_cameraThread->executeCommand(CameraThread::CommandPhotoMode);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandPhotoMode);
         break;
     case Qt::Key_V:
-        m_cameraThread->executeCommand(CameraThread::CommandVideoMode);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandVideoMode);
         break;
 
 
     case Qt::Key_D:
-        m_cameraThread->executeCommand(CameraThread::CommandIncreaseAperture);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandIncreaseAperture);
         break;
     case Qt::Key_Q:
-        m_cameraThread->executeCommand(CameraThread::CommandDecreaseAperture);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandDecreaseAperture);
         break;
 
     case Qt::Key_Z:
-        m_cameraThread->executeCommand(CameraThread::CommandIncreaseShutterSpeed);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandIncreaseShutterSpeed);
         break;
     case Qt::Key_S:
-        m_cameraThread->executeCommand(CameraThread::CommandDecreaseShutterSpeed);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandDecreaseShutterSpeed);
         break;
 
     case Qt::Key_E:
-        m_cameraThread->executeCommand(CameraThread::CommandIncreaseIso);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandIncreaseIso);
         break;
     case Qt::Key_A:
-        m_cameraThread->executeCommand(CameraThread::CommandDecreaseIso);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandDecreaseIso);
         break;
     case Qt::Key_T:
-        m_cameraThread->executeCommand(CameraThread::CommandExposureModePlus);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandExposureModePlus);
         break;
     case Qt::Key_R:
-        m_cameraThread->executeCommand(CameraThread::CommandExposureModeMinus);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandExposureModeMinus);
         break;
     case Qt::Key_I:
         if (m_cameraStatus.isoAuto())
         {
-            m_cameraThread->executeCommand(CameraThread::CommandDisableIsoAuto);
+            m_cameraThread->executeCommand(hpis::CameraThread::CommandDisableIsoAuto);
         } else {
-            m_cameraThread->executeCommand(CameraThread::CommandEnableIsoAuto);
+            m_cameraThread->executeCommand(hpis::CameraThread::CommandEnableIsoAuto);
         }
         break;
 
     case Qt::Key_P:
         if (m_cameraStatus.exposurePreview())
         {
-            m_cameraThread->executeCommand(CameraThread::CommandDisableExposurePreview);
+            m_cameraThread->executeCommand(hpis::CameraThread::CommandDisableExposurePreview);
         } else {
-            m_cameraThread->executeCommand(CameraThread::CommandEnableExposurePreview);
+            m_cameraThread->executeCommand(hpis::CameraThread::CommandEnableExposurePreview);
         }
 
         break;
 
     case Qt::Key_Plus:
-        m_cameraThread->executeCommand(CameraThread::CommandIncreaseLvZoomRatio);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandIncreaseLvZoomRatio);
         break;
     case Qt::Key_Minus:
-        m_cameraThread->executeCommand(CameraThread::CommandDecreaseLvZoomRatio);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandDecreaseLvZoomRatio);
         break;
 
     case Qt::Key_Space:
-        m_cameraThread->executeCommand(CameraThread::CommandStartMovie);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandStartMovie);
         break;
     case Qt::Key_Return:
-        m_cameraThread->executeCommand(CameraThread::CommandCapturePhoto);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandCapturePhoto);
         break;
     default:
         QOpenGLWindow::keyPressEvent(event);
@@ -253,7 +199,7 @@ void MainWindow::mousePressEvent(QMouseEvent *ev)
         qDebug() << xImage << yImage;
 
 
-        m_cameraThread->executeCommand(CameraThread::Command::changeAfArea(xImage, yImage));
+        m_cameraThread->executeCommand(hpis::CameraThread::Command::changeAfArea(xImage, yImage));
     }
 }
 

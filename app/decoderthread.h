@@ -14,6 +14,8 @@
 #include "gpu/omximagedecoder.h"
 #endif
 
+namespace hpis {
+
 class CameraThread;
 
 class DecoderThread : public QThread
@@ -53,5 +55,7 @@ signals:
 
 public slots:
 };
+
+}
 
 #endif // LIVEVIEWDECODERTHREAD_H

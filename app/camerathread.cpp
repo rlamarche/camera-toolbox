@@ -19,34 +19,34 @@
 QString
 hpis_gp_port_result_as_string (int result);
 
-CameraThread::Command::Command()
+hpis::CameraThread::Command::Command()
 {
 
 }
 
-CameraThread::Command::Command(CommandType commandType) : m_commandType(commandType)
+hpis::CameraThread::Command::Command(CommandType commandType) : m_commandType(commandType)
 {
 
 }
 
-int CameraThread::Command::x()
+int hpis::CameraThread::Command::x()
 {
     return m_x;
 }
 
-int CameraThread::Command::y()
+int hpis::CameraThread::Command::y()
 {
     return m_y;
 }
 
-CameraThread::CommandType CameraThread::Command::type()
+hpis::CameraThread::CommandType hpis::CameraThread::Command::type()
 {
     return m_commandType;
 }
 
-CameraThread::Command CameraThread::Command::changeAfArea(int x, int y)
+hpis::CameraThread::Command hpis::CameraThread::Command::changeAfArea(int x, int y)
 {
-    Command command(CameraThread::CommandChangeAfArea);
+    Command command(hpis::CameraThread::CommandChangeAfArea);
     command.m_x = x;
     command.m_y = y;
 
@@ -55,22 +55,22 @@ CameraThread::Command CameraThread::Command::changeAfArea(int x, int y)
 
 
 
-CameraThread::CameraThread(hpis::Camera* camera, QObject *parent) : QThread(parent),
+hpis::CameraThread::CameraThread(hpis::Camera* camera, QObject *parent) : QThread(parent),
     m_camera(camera), m_stop(false), m_liveview(false), m_recording(false), m_decoderThread(0)
 {
     refreshTimeoutMs = 2000;
 }
 
 
-bool CameraThread::init()
+bool hpis::CameraThread::init()
 {
-    m_decoderThread = new DecoderThread(this);
+    m_decoderThread = new hpis::DecoderThread(this);
     m_decoderThread->start();
 
     return m_camera->init();
 }
 
-void CameraThread::shutdown()
+void hpis::CameraThread::shutdown()
 {
     m_camera->shutdown();
     m_decoderThread->stop();
@@ -78,7 +78,7 @@ void CameraThread::shutdown()
 }
 
 
-void CameraThread::run()
+void hpis::CameraThread::run()
 {
     qInfo() << "Start camera thread";
     if (!init()) {
@@ -135,7 +135,7 @@ void CameraThread::run()
     qInfo() << "Stop camera thread";
 }
 
-void CameraThread::doCapturePreview()
+void hpis::CameraThread::doCapturePreview()
 {
     CameraPreview* cameraPreview;
     if (m_camera->capturePreview(&cameraPreview))
@@ -150,7 +150,7 @@ void CameraThread::doCapturePreview()
     }
 }
 
-void CameraThread::stop()
+void hpis::CameraThread::stop()
 {
     m_mutex.lock();
     m_stop = true;
@@ -158,7 +158,7 @@ void CameraThread::stop()
     m_mutex.unlock();
 }
 
-void CameraThread::executeCommand(Command command)
+void hpis::CameraThread::executeCommand(Command command)
 {
     m_mutex.lock();
     m_commandQueue.append(command);
@@ -166,19 +166,19 @@ void CameraThread::executeCommand(Command command)
     m_mutex.unlock();
 }
 
-void CameraThread::capturePreview()
+void hpis::CameraThread::capturePreview()
 {
     m_condition.wakeOne();
 }
 
-void CameraThread::previewDecoded(QImage image)
+void hpis::CameraThread::previewDecoded(QImage image)
 {
     emit imageAvailable(image);
 }
 
 
 
-void CameraThread::doCommand(Command command)
+void hpis::CameraThread::doCommand(Command command)
 {
     int ret;
     switch (command.type()) {

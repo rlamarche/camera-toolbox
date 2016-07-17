@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui #declarative
+QT       += core gui network #declarative
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -39,11 +39,12 @@ HEADERS  += mainwindow.h \
 #    histogram/histogram.h
 
 
-INCLUDEPATH += ../vendor/libgphoto2 ../vendor/libgphoto2/libgphoto2_port
+INCLUDEPATH += ../vendor/libgphoto2 ../vendor/libgphoto2/libgphoto2_port ../vendor/qhttp/src
 #LIBS     += -lgphoto2_port -lgphoto2
 LIBS += \
         -L../libgphoto2 -llibgphoto2 \
         -L../libgphoto2_port -llibgphoto2_port \
+        -L../vendor/qhttp/xbin -lqhttp \
         -lltdl -lexif
 
 

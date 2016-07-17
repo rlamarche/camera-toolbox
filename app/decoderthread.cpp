@@ -29,19 +29,19 @@ extern "C" {
 #endif
 
 
-DecoderThread::DecoderThread(CameraThread* liveviewThread, QObject *parent) : QThread(parent), m_cameraThread(liveviewThread), m_cameraPreview(0)
+hpis::DecoderThread::DecoderThread(CameraThread* liveviewThread, QObject *parent) : QThread(parent), m_cameraThread(liveviewThread), m_cameraPreview(0)
     //,m_helloLogstdout(), m_helloJpeg(&m_helloLogstdout)
 {
     m_stop = false;
     //bcm_host_init();
 }
 
-DecoderThread::~DecoderThread()
+hpis::DecoderThread::~DecoderThread()
 {
     //bcm_host_deinit();
 }
 
-void DecoderThread::run()
+void hpis::DecoderThread::run()
 {
     qInfo() << "Start liveview decoder thread";
     while (!m_stop) {
@@ -57,7 +57,7 @@ void DecoderThread::run()
     qInfo() << "Stop liveview decoder thread";
 }
 
-void DecoderThread::stop()
+void hpis::DecoderThread::stop()
 {
     m_mutex.lock();
     m_stop = true;
@@ -65,7 +65,7 @@ void DecoderThread::stop()
     m_mutex.unlock();
 }
 
-void DecoderThread::doDecodePreview()
+void hpis::DecoderThread::doDecodePreview()
 {
     unsigned long int size = m_cameraPreview->size();
     const char *data = m_cameraPreview->data();
@@ -84,7 +84,7 @@ void DecoderThread::doDecodePreview()
     m_cameraThread->previewDecoded(image);
 }
 
-bool DecoderThread::decodePreview(CameraPreview* cameraPreview)
+bool hpis::DecoderThread::decodePreview(CameraPreview* cameraPreview)
 {
     if (m_mutex.tryLock()) {
         m_cameraPreview = cameraPreview;
@@ -128,7 +128,7 @@ my_error_exit (j_common_ptr cinfo)
 
 
 
-QImage DecoderThread::decodeImage(const char *data, unsigned long size)
+QImage hpis::DecoderThread::decodeImage(const char *data, unsigned long size)
 {
     /* This struct contains the JPEG decompression parameters and pointers to
      * working space (which is allocated as needed by the JPEG library).
@@ -243,7 +243,7 @@ QImage DecoderThread::decodeImage(const char *data, unsigned long size)
 
 #ifdef USE_LIBTURBOJPEG
 
-QImage DecoderThread::decodeImageTurbo(const char *data, unsigned long size)
+QImage hpis::DecoderThread::decodeImageTurbo(const char *data, unsigned long size)
 {
     int jpegSubsamp, width, height;
 
@@ -260,7 +260,7 @@ QImage DecoderThread::decodeImageTurbo(const char *data, unsigned long size)
 #endif
 
 #ifdef USE_RPI
-QImage DecoderThread::decodeImageGPU(const char *data, unsigned long size)
+QImage hpis::DecoderThread::decodeImageGPU(const char *data, unsigned long size)
 {
     m_omxDecoder.decodeImage(data, size);
     return m_omxDecoder.outputImage();

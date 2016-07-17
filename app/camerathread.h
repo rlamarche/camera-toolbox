@@ -14,8 +14,9 @@
 #include <QMap>
 #include <QList>
 
-class DecoderThread;
+namespace hpis {
 
+class DecoderThread;
 
 class CameraThread : public QThread
 {
@@ -118,5 +119,7 @@ signals:
 public slots:
     void capturePreview();
 };
+
+}
 
 #endif // CAMERATHREAD_H

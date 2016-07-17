@@ -8,7 +8,6 @@
 
 
 #include "camerathread.h"
-#include "camera.h"
 
 #include <QOpenGLWindow>
 #include <QMap>
@@ -29,7 +28,7 @@ class MainWindow : public QOpenGLWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(hpis::Camera* camera);
+    explicit MainWindow(hpis::CameraThread* camera);
     ~MainWindow();
 
 protected:
@@ -53,7 +52,7 @@ private:
     QTimer*                 m_liveviewTimer;
 
     // Threads
-    CameraThread* m_cameraThread;
+    hpis::CameraThread* m_cameraThread;
 
     // Data
     int m_overscanLeft;

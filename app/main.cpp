@@ -4,6 +4,7 @@
 
 #include <QDebug>
 
+
 #include <gphoto2/gphoto2-camera.h>
 #include <gphoto2/gphoto2-context.h>
 #include <gphoto2/gphoto2-port-info-list.h>
@@ -26,6 +27,12 @@
 
 #include <sys/time.h>
 #include <ltdl.h>
+
+
+// Server
+#include <qhttpserver.hpp>
+#include <qhttpserverresponse.hpp>
+
 
 /* time zero for debug log time stamps */
 static struct timeval glob_tv_zero = { 0, 0 };
@@ -168,6 +175,7 @@ int main(int argc, char *argv[])
     fclose(fp);
 
     bool success = true;
+
     for (int i = 0; i < 10; i ++)
     {
         success = success && decoder->decodeImage(sourceImage, imageSize);
@@ -212,8 +220,31 @@ int main(int argc, char *argv[])
 
     if (lookupCamera(&camera))
     {
-        MainWindow w(camera);
+        hpis::CameraThread cameraThread(camera);
+        MainWindow w(&cameraThread);
+        cameraThread.start();
+
         w.show();
+
+
+        using namespace qhttp::server;
+
+        QHttpServer server(&a);
+        // listening on 0.0.0.0:8080
+        server.listen(QHostAddress::Any, 8080, [](QHttpRequest* req, QHttpResponse* res) {
+
+            res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
+            res->addHeader("connection", "close");      // it's the default header, this line can be omitted.
+            res->end("Hello World!\n");                 // response body data
+
+            // when "connection: close", the req and res will be deleted automatically.
+        });
+
+
+        if ( !server.isListening() ) {
+            fprintf(stderr, "failed. can not listen at port 8080!\n");
+            return -1;
+        }
 
         return a.exec();
     }

@@ -1,3 +1,6 @@
 [submodule "libgphoto2"]
 	path = vendor/libgphoto2
 	url = git@github.com:gphoto/libgphoto2.git
+[submodule "vendor/qhttp"]
+	path = vendor/qhttp
+	url = git@github.com:azadkuh/qhttp.git
