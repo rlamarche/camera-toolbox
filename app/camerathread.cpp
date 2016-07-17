@@ -11,8 +11,6 @@
 #include <turbojpeg.h>
 #endif
 
-#include <gphoto2/gphoto2-port-info-list.h>
-
 #include <QDebug>
 
 #include <QTime>
@@ -127,7 +125,6 @@ void CameraThread::run()
                 command = m_commandQueue.dequeue();
                 doCommand(command);
             }
-            //m_camera->applyCameraSettings();
         }
         m_mutex.unlock();
 
@@ -151,40 +148,6 @@ void CameraThread::doCapturePreview()
         //m_liveview = false;
         qInfo() << "The camera is not ready, try again later.";
     }
-
-    /*
-    CameraFile *file;
-
-    int ret = gp_file_new(&file);
-    if (ret < GP_OK) {
-        qWarning() << "Unable to create camera file for preview";
-        return;
-    }
-
-    ret = gp_camera_capture_preview(m_camera, file, m_context);
-    if (ret < GP_OK) {
-        qWarning() << "Unable to capture preview";
-        gp_file_free(file);
-        return;
-    }
-
-    unsigned long int size;
-    const char *data;
-
-    gp_file_get_data_and_size(file, &data, &size);
-
-    //QImage image = decodeImageTurbo(data, size);
-    //QImage image = decodeImage(data, size);
-    //emit imageAvailable(image);
-    if (!m_decoderThread->decodePreview(file))
-    {
-        gp_file_free(file);
-    }
-
-    //m_preview.loadFromData((uchar*) data, size, "JPG");
-    //emit previewAvailable(m_preview);
-
-*/
 }
 
 void CameraThread::stop()
@@ -220,70 +183,39 @@ void CameraThread::doCommand(Command command)
     int ret;
     switch (command.type()) {
     case CommandStartLiveview:
-        m_camera->startLiveView();
-        m_liveview = true;
-        /*
-        ret = setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 1);
-        if (ret == GP_OK) {
+        if (m_camera->startLiveView())
+        {
             m_liveview = true;
         }
-*/
         break;
 
     case CommandStopLiveview:
-        m_liveview = false;
-        m_camera->stopLiveview();
-        /*
-        ret = setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 0);
-        if (ret == GP_OK) {
+        if (m_camera->stopLiveview())
+        {
             m_liveview = false;
         }
-        */
         break;
     case CommandToggleLiveview:
         if (m_liveview)
         {
-            m_camera->stopLiveview();
+            if (m_camera->stopLiveview())
+            {
+                m_liveview = !m_liveview;
+            }
         } else {
-            m_camera->startLiveView();
+            if (m_camera->startLiveView())
+            {
+                m_liveview = !m_liveview;
+            }
         }
-
-        m_liveview = !m_liveview;
-        /*
-        if (m_liveview) {
-            ret = setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 0);
-        } else {
-            ret = setToggleWidget(HPIS_CONFIG_KEY_VIEWFINDER, 1);
-        }
-        if (ret == GP_OK) {
-            m_liveview = !m_liveview;
-        }
-        */
         break;
 
     case CommandIncreaseAperture:
         m_camera->increaseAperture();
-        /*
-        if (m_cameraAperture < m_cameraApertures.length() - 1) {
-            QString newAperture = m_cameraApertures[m_cameraAperture + 1];
-            ret = setRadioWidget(HPIS_CONFIG_KEY_APERTURE, newAperture.toStdString().c_str());
-            if (ret == GP_OK) {
-                m_cameraAperture ++;
-            }
-        }
-        */
         break;
+
     case CommandDecreaseAperture:
         m_camera->decreaseAperture();
-        /*
-        if (m_cameraAperture > 0) {
-            QString newAperture = m_cameraApertures[m_cameraAperture - 1];
-            ret = setRadioWidget(HPIS_CONFIG_KEY_APERTURE, newAperture.toStdString().c_str());
-            if (ret == GP_OK) {
-                m_cameraAperture --;
-            }
-        }
-        */
         break;
 
     case CommandEnableIsoAuto:
@@ -335,19 +267,16 @@ void CameraThread::doCommand(Command command)
             {
                 m_recording = false;
             }
-            //ret = setToggleWidget(HPIS_CONFIG_KEY_STOP_MOVIE, 1);
         } else {
             if (m_camera->startRecordMovie())
             {
                 m_recording = true;
             }
-            //ret = setToggleWidget(HPIS_CONFIG_KEY_START_MOVIE, 1);
         }
 
         break;
 
     case CommandCapturePhoto:
-        //  m_liveview = false;
         m_camera->capturePhoto();
         break;
 
@@ -364,159 +293,4 @@ void CameraThread::doCommand(Command command)
 
     default: break;
     }
-
-    //updateConfig();
 }
-
-
-/*
-
-int CameraThread::setToggleWidget(QString widgetName, int toggleValue)
-{
-    CameraWidget* widget = m_widgets[widgetName];
-
-    if (widget)
-    {
-        int ret = gp_widget_set_value(widget, &toggleValue);
-        if (ret < GP_OK) {
-            qWarning() << "Unable to toggle widget :" << widgetName;
-        }
-        return ret;
-    } else {
-        qWarning() << "Widget not found :" << widgetName;
-        return -1;
-    }
-
-    return GP_OK;
-}
-
-int CameraThread::setRangeWidget(QString widgetName, float rangeValue)
-{
-    CameraWidget* widget = m_widgets[widgetName];
-
-    if (widget)
-    {
-        int ret = gp_widget_set_value(widget, &rangeValue);
-        if (ret < GP_OK) {
-            qWarning() << "Unable to set range value to widget :" << widgetName;
-        }
-
-        return ret;
-    } else {
-        qWarning() << "Widget not found :" << widgetName;
-        return -1;
-    }
-
-    return GP_OK;
-}
-
-int CameraThread::setRadioWidget(QString widgetName, const char* radioValue)
-{
-    CameraWidget* widget = m_widgets[widgetName];
-
-
-    gp_widget_get_child_by_name (m_cameraWindow, widgetName.toStdString().c_str(), &widget);
-
-    if (widget)
-    {
-        qInfo() << "Setting value :" << radioValue << "to widget :" << widgetName;
-        int ret = gp_widget_set_value(widget, radioValue);
-        if (ret < GP_OK) {
-            qWarning() << "Unable to set radio value to widget :" << hpis_gp_port_result_as_string(ret);
-        }
-
-        return ret;
-    } else {
-        qWarning() << "Widget not found :" << widgetName;
-        return -1;
-    }
-
-    return GP_OK;
-}
-
-int CameraThread::updateConfig()
-{
-    int ret = gp_camera_set_config(m_camera, m_cameraWindow, m_context);
-    if (ret < GP_OK) {
-        qWarning() << "Unable to update camera config :" << hpis_gp_port_result_as_string(ret);
-    }
-    return ret;
-}
-
-QString
-hpis_gp_port_result_as_string (int result)
-{
-    switch (result) {
-    case GP_OK:
-        return QObject::tr("No error");
-    case GP_ERROR:
-        return QObject::tr("Unspecified error");
-    case GP_ERROR_IO:
-        return QObject::tr("I/O problem");
-    case GP_ERROR_BAD_PARAMETERS:
-        return QObject::tr("Bad parameters");
-    case GP_ERROR_NOT_SUPPORTED:
-        return QObject::tr("Unsupported operation");
-    case  GP_ERROR_FIXED_LIMIT_EXCEEDED:
-        return QObject::tr("Fixed limit exceeded");
-    case GP_ERROR_TIMEOUT:
-        return QObject::tr("Timeout reading from or writing to the port");
-    case GP_ERROR_IO_SUPPORTED_SERIAL:
-        return QObject::tr("Serial port not supported");
-    case GP_ERROR_IO_SUPPORTED_USB:
-        return QObject::tr("USB port not supported");
-    case GP_ERROR_UNKNOWN_PORT:
-        return QObject::tr("Unknown port");
-    case GP_ERROR_NO_MEMORY:
-        return QObject::tr("Out of memory");
-    case GP_ERROR_LIBRARY:
-        return QObject::tr("Error loading a library");
-    case GP_ERROR_IO_INIT:
-        return QObject::tr("Error initializing the port");
-    case GP_ERROR_IO_READ:
-        return QObject::tr("Error reading from the port");
-    case GP_ERROR_IO_WRITE:
-        return QObject::tr("Error writing to the port");
-    case GP_ERROR_IO_UPDATE:
-        return QObject::tr("Error updating the port settings");
-    case GP_ERROR_IO_SERIAL_SPEED:
-        return QObject::tr("Error setting the serial port speed");
-    case GP_ERROR_IO_USB_CLEAR_HALT:
-        return QObject::tr("Error clearing a halt condition on the USB port");
-    case GP_ERROR_IO_USB_FIND:
-        return QObject::tr("Could not find the requested device on the USB port");
-    case GP_ERROR_IO_USB_CLAIM:
-        return QObject::tr("Could not claim the USB device");
-    case GP_ERROR_IO_LOCK:
-        return QObject::tr("Could not lock the device");
-    case GP_ERROR_HAL:
-        return QObject::tr("libhal error");
-    case GP_ERROR_CORRUPTED_DATA:
-        return QObject::tr("Corrupted data received");
-    case GP_ERROR_FILE_EXISTS:
-        return QObject::tr("File already exists");
-    case GP_ERROR_MODEL_NOT_FOUND:
-        return QObject::tr("Specified camera model was not found");
-    case GP_ERROR_DIRECTORY_NOT_FOUND:
-        return QObject::tr("Specified directory was not found")        ;
-    case GP_ERROR_FILE_NOT_FOUND:
-        return QObject::tr("Specified directory was not found");
-    case GP_ERROR_DIRECTORY_EXISTS:
-        return QObject::tr("Specified directory already exists");
-    case GP_ERROR_CAMERA_BUSY:
-        return QObject::tr("The camera is already busy");
-    case GP_ERROR_PATH_NOT_ABSOLUTE:
-        return QObject::tr("Path is not absolute");
-    case GP_ERROR_CANCEL:
-        return QObject::tr("Cancellation successful");
-    case GP_ERROR_CAMERA_ERROR:
-        return QObject::tr("Unspecified camera error");
-    case GP_ERROR_OS_FAILURE:
-        return QObject::tr("Unspecified failure of the operating system");
-    case GP_ERROR_NO_SPACE:
-        return QObject::tr("Not enough space");
-    default:
-        return QObject::tr("Unknown error %1").arg(QString().sprintf("%d", result));
-    }
-}
-*/
