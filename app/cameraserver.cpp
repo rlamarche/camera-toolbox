@@ -2,6 +2,9 @@
 
 #include <QUrlQuery>
 #include <QPair>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 using namespace hpis;
 
@@ -35,8 +38,9 @@ void CameraServer::ctrlSet(QMap<QString, QString> params)
     }
 }
 
-void CameraServer::ctrlMode(QMap<QString, QString> params)
+QJsonDocument CameraServer::ctrlMode(QMap<QString, QString> params)
 {
+    QJsonObject response;
     QString value = params["action"];
 
     if (value == "to_rec") {
@@ -45,14 +49,37 @@ void CameraServer::ctrlMode(QMap<QString, QString> params)
     } else if (value == "to_cap") {
         m_cameraThread->executeCommand(CameraThread::CommandStartLiveview);
         m_cameraThread->executeCommand(CameraThread::CommandPhotoMode);
-    } else if (value == "off") {
-        m_cameraThread->executeCommand(CameraThread::CommandStopLiveview);
+    } else if (value == "query") {
+        CameraStatus cameraStatus = m_cameraThread->cameraStatus();
+        response = cameraStatus.toJsonObject();
     }
+
+    return QJsonDocument(response);
 }
 
 void CameraServer::ctrlShutdown()
 {
     m_cameraThread->executeCommand(CameraThread::CommandStopLiveview);
+}
+
+void CameraServer::ctrlRec(QMap<QString, QString> params)
+{
+    CameraStatus cameraStatus = m_cameraThread->cameraStatus();
+    QString value = params["action"];
+
+    if (cameraStatus.captureMode() == Camera::CaptureModeVideo)
+    {
+        if (value == "start")
+        {
+            m_cameraThread->executeCommand(CameraThread::CommandStartMovie);
+        }
+        else if (value == "stop")
+        {
+            m_cameraThread->executeCommand(CameraThread::CommandStopMovie);
+        }
+    } else {
+        m_cameraThread->executeCommand(CameraThread::CommandCapturePhoto);
+    }
 }
 
 void CameraServer::processRequest(qhttp::server::QHttpRequest* req, qhttp::server::QHttpResponse* res)
@@ -72,13 +99,15 @@ void CameraServer::processRequest(qhttp::server::QHttpRequest* req, qhttp::serve
 
 
     QString path = url.path();
+    QJsonDocument jsonResponse;
+
     if (path == "/ctrl/set")
     {
         ctrlSet(params);
     }
     else if (path == "/ctrl/mode")
     {
-        ctrlMode(params);
+        jsonResponse = ctrlMode(params);
     }
     else if (path == "/ctrl/shutdown")
     {
@@ -86,25 +115,11 @@ void CameraServer::processRequest(qhttp::server::QHttpRequest* req, qhttp::serve
     }
     else if (path == "/ctrl/rec")
     {
-        CameraStatus cameraStatus = m_cameraThread->cameraStatus();
-        QString value = params["action"];
-
-        if (cameraStatus.captureMode() == Camera::CaptureModeVideo)
-        {
-            if (value == "start")
-            {
-                m_cameraThread->executeCommand(CameraThread::CommandStartMovie);
-            }
-            else if (value == "stop")
-            {
-                m_cameraThread->executeCommand(CameraThread::CommandStopMovie);
-            }
-        } else {
-            m_cameraThread->executeCommand(CameraThread::CommandCapturePhoto);
-        }
+        ctrlRec(params);
     }
 
     res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
     res->addHeader("connection", "close");      // it's the default header, this line can be omitted.
-    res->end("Hello World!\n");
+    res->addHeader("Content-Type", "application/json");
+    res->end(jsonResponse.toJson());
 }

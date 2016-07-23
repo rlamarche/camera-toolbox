@@ -17,14 +17,14 @@ class CameraServer : public QObject
 public:
     explicit CameraServer(CameraThread* cameraThread, QObject *parent = 0);
     
-    void ctrlShutdown();
     
 protected:
     void processRequest(qhttp::server::QHttpRequest* req, qhttp::server::QHttpResponse* res);
-    
+
     void ctrlSet(QMap<QString, QString> params);
-    
-    void ctrlMode(QMap<QString, QString> params);
+    QJsonDocument ctrlMode(QMap<QString, QString> params);
+    void ctrlRec(QMap<QString, QString> params);
+    void ctrlShutdown();
 
 private:
     CameraThread* m_cameraThread;

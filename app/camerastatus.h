@@ -24,6 +24,7 @@ public:
     QString iso();
     bool isoAuto();
     bool exposurePreview();
+    QJsonObject toJsonObject();
 
 private:
     Camera::CaptureMode m_captureMode;

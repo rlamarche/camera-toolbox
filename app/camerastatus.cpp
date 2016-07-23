@@ -1,5 +1,7 @@
 #include "camerastatus.h"
 
+#include <QJsonObject>
+
 using namespace hpis;
 
 CameraStatus::CameraStatus()
@@ -45,4 +47,18 @@ QString CameraStatus::shutterSpeed()
 bool CameraStatus::exposurePreview()
 {
     return m_exposurePreview;
+}
+
+QJsonObject CameraStatus::toJsonObject()
+{
+    QJsonObject status;
+
+    status["captureMode"] = m_captureMode;
+    status["isInLiveView"] = m_isInLiveView;
+    status["isRecording"] = m_isRecording;
+    status["aperture"] = m_aperture;
+    status["shutterSpeed"] = m_shutterSpeed;
+    status["iso"] = m_iso;
+
+    return status;
 }
