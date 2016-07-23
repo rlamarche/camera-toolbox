@@ -14,36 +14,44 @@ hpis::CameraServer::CameraServer(CameraThread* cameraThread, QObject *parent) : 
     }
 }
 
+void hpis::CameraServer::ctrlSet(QMap<QString, QString> params)
+{
+    QString value;
+
+    if (params.contains("iso"))
+    {
+        value = params["iso"];
+        if (value == "Auto")
+        {
+            m_cameraThread->executeCommand(hpis::CameraThread::CommandEnableIsoAuto);
+        }
+        else
+        {
+            m_cameraThread->executeCommand(hpis::CameraThread::CommandDisableIsoAuto);
+            m_cameraThread->executeCommand(hpis::CameraThread::Command::setIso(value));
+        }
+    }
+}
+
 void hpis::CameraServer::processRequest(qhttp::server::QHttpRequest* req, qhttp::server::QHttpResponse* res)
 {
     QUrl url = req->url();
 
-    QString path = url.path();
     QUrlQuery query(url);
+    QMap<QString, QString> params;
+
     QList<QPair<QString, QString> > queryItems = query.queryItems();
-
     QList<QPair<QString, QString> >::iterator i;
+    for (i = queryItems.begin(); i != queryItems.end(); ++i)
+    {
+        QPair<QString, QString> item = *i;
+        params[item.first] = item.second;
+    }
+
+
+    QString path = url.path();
     if (path == "/ctrl/set") {
-        for (i = queryItems.begin(); i != queryItems.end(); ++i) {
-            QPair<QString, QString> item = *i;
-
-            QString key = item.first;
-            QString value = item.second;
-
-            qInfo() << "Set" << key << "to" << value;
-            if (key == "iso")
-            {
-                if (value == "Auto")
-                {
-                    m_cameraThread->executeCommand(hpis::CameraThread::CommandEnableIsoAuto);
-                }
-                else
-                {
-                    m_cameraThread->executeCommand(hpis::CameraThread::CommandDisableIsoAuto);
-                    m_cameraThread->executeCommand(hpis::CameraThread::Command::setIso(value));
-                }
-            }
-        }
+        ctrlSet(params);
     }
 
     res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
