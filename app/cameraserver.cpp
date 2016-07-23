@@ -33,6 +33,21 @@ void hpis::CameraServer::ctrlSet(QMap<QString, QString> params)
     }
 }
 
+void CameraServer::ctrlMode(QMap<QString, QString> params)
+{
+    QString value = params["action"];
+
+    if (value == "to_rec") {
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandStartLiveview);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandVideoMode);
+    } else if (value == "to_cap") {
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandStartLiveview);
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandPhotoMode);
+    } else if (value == "off") {
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandStopLiveview);
+    }
+}
+
 void hpis::CameraServer::processRequest(qhttp::server::QHttpRequest* req, qhttp::server::QHttpResponse* res)
 {
     QUrl url = req->url();
@@ -52,6 +67,8 @@ void hpis::CameraServer::processRequest(qhttp::server::QHttpRequest* req, qhttp:
     QString path = url.path();
     if (path == "/ctrl/set") {
         ctrlSet(params);
+    } else if (path == "/ctrl/mode") {
+        ctrlMode(params);
     }
 
     res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
