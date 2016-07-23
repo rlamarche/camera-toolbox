@@ -3,7 +3,9 @@
 
 #include <QDebug>
 
-hpis::GPCamera::GPCamera(QString cameraModel, QString cameraPort, QObject *parent) : hpis::Camera(parent), m_camera(0), m_cameraModel(cameraModel), m_cameraPort(cameraPort)
+using namespace hpis;
+
+GPCamera::GPCamera(QString cameraModel, QString cameraPort, QObject *parent) : Camera(parent), m_camera(0), m_cameraModel(cameraModel), m_cameraPort(cameraPort)
 {
     m_configChanged = false;
     // Create gphoto context
@@ -18,7 +20,7 @@ hpis::GPCamera::GPCamera(QString cameraModel, QString cameraPort, QObject *paren
     gp_port_info_list_load(m_portInfoList);
 }
 
-hpis::GPCamera::~GPCamera()
+GPCamera::~GPCamera()
 {
     qWarning() << "Calling GPCamera destructor";
 
@@ -27,12 +29,12 @@ hpis::GPCamera::~GPCamera()
     gp_context_unref(m_context);
 }
 
-void hpis::GPCamera::reportError(QString error)
+void GPCamera::reportError(QString error)
 {
     qWarning() << "Error :" << error;
 }
 
-bool hpis::GPCamera::init()
+bool GPCamera::init()
 {
     int ret;
 
@@ -94,27 +96,30 @@ bool hpis::GPCamera::init()
 
     //applyCameraSettings();
 
+    m_isInLiveView = false;
+    m_isRecording = false;
+
     return true;
 }
 
-void hpis::GPCamera::shutdown()
+void GPCamera::shutdown()
 {
     gp_camera_free(m_camera);
 }
 
-bool hpis::GPCamera::capturePreview(CameraPreview** cameraPreview)
+bool GPCamera::capturePreview(CameraPreview** cameraPreview)
 {
     CameraFile *file;
 
     int ret = gp_file_new(&file);
     if (ret < GP_OK) {
-        reportError(QString("Unable to create camera file for preview : %1").arg(errorCodeToString(ret)));
+        reportError(QString("Unable to create camera file for preview: %1").arg(errorCodeToString(ret)));
         return false;
     }
 
     ret = gp_camera_capture_preview(m_camera, file, m_context);
     if (ret < GP_OK) {
-        reportError(QString("Unable to capture preview : %1").arg(errorCodeToString(ret)));
+        reportError(QString("Unable to capture preview: %1").arg(errorCodeToString(ret)));
         gp_file_free(file);
         return false;
     }
@@ -125,18 +130,39 @@ bool hpis::GPCamera::capturePreview(CameraPreview** cameraPreview)
     return true;
 }
 
-bool hpis::GPCamera::startRecordMovie()
+bool GPCamera::startRecordMovie()
 {
-    gpSetToggleWidget("movie", 1);
+    int ret = gpSetToggleWidget("movie", 1);
+    if (ret < GP_OK)
+    {
+        reportError(QString("Unable to start record a movie: %1").arg(errorCodeToString(ret)));
+        return false;
+    } else {
+        m_isRecording = true;
+        return true;
+    }
 }
 
-bool hpis::GPCamera::stopRecordMovie()
+bool GPCamera::stopRecordMovie()
 {
-    gpSetToggleWidget("movie", 0);
+    int ret = gpSetToggleWidget("movie", 0);
+    if (ret < GP_OK)
+    {
+        reportError(QString("Unable to stop record a movie: %1").arg(errorCodeToString(ret)));
+        return false;
+    } else {
+        m_isRecording = false;
+        return true;
+    }
+}
+
+bool GPCamera::isRecording()
+{
+    return m_isRecording;
 }
 
 
-bool hpis::GPCamera::capturePhoto()
+bool GPCamera::capturePhoto()
 {
     CameraFilePath camera_file_path;
     CameraEventType	evtype;
@@ -148,7 +174,7 @@ bool hpis::GPCamera::capturePhoto()
     int ret = gp_camera_trigger_capture(m_camera, m_context);
     //int ret = gp_camera_capture(m_camera, GP_CAPTURE_IMAGE, &camera_file_path, m_context);
 
-    if (ret < GP_OK) {
+    if (ret != GP_OK) {
         reportError(QString("Unable to capture photo: %1").arg(errorCodeToString(ret)));
         return false;
     }
@@ -159,6 +185,7 @@ bool hpis::GPCamera::capturePhoto()
     //return true;
 
     bool captureComplete = false;
+    bool fileAdded = false;
 
     while (!captureComplete)
     {
@@ -171,17 +198,33 @@ bool hpis::GPCamera::capturePhoto()
         switch (evtype) {
         case GP_EVENT_CAPTURE_COMPLETE:
             captureComplete = true;
-            qDebug() << "Event: Capture complete";
+            if (fileAdded)
+            {
+                qDebug() << "Event: Capture complete";
+            } else {
+                qDebug() << "Event: Capture failure";
+                if (data != NULL)
+                {
+                    qDebug() << "Data :" << (char*) data;
+                }
+            }
             break;
         case GP_EVENT_UNKNOWN:
+            qDebug() << "Event: Unknown";
+            if (data != NULL)
+            {
+                qDebug() << "Unknown data :" << (char*) data;
+            }
+            break;
         case GP_EVENT_TIMEOUT:
-            //qDebug() << "Event: Unknown or timeout";
+            qDebug() << "Event: Timeout";
             break;
         case GP_EVENT_FOLDER_ADDED:
             qDebug() << "Event: Folder added";
             break;
         case GP_EVENT_FILE_ADDED:
             qDebug() << "Event: File added";
+            fileAdded = true;
 
             /*
             fprintf (stderr, "File %s / %s added to queue.\n", path->folder, path->name);
@@ -206,11 +249,12 @@ bool hpis::GPCamera::capturePhoto()
     return true;
 }
 
-bool hpis::GPCamera::startLiveView()
+bool GPCamera::startLiveView()
 {
     int ret = gpSetToggleWidget(viewfinderWidgetName(), 1);
     if (ret == GP_OK)
     {
+        m_isInLiveView = true;
         readCameraSettings();
         return true;
     } else {
@@ -218,11 +262,12 @@ bool hpis::GPCamera::startLiveView()
     }
 }
 
-bool hpis::GPCamera::stopLiveview()
+bool GPCamera::stopLiveView()
 {
     int ret = gpSetToggleWidget(viewfinderWidgetName(), 0);
     if (ret == GP_OK)
     {
+        m_isInLiveView = false;
         readCameraSettings();
         return true;
     } else {
@@ -230,8 +275,12 @@ bool hpis::GPCamera::stopLiveview()
     }
 }
 
+bool GPCamera::isInLiveView()
+{
+    return m_isInLiveView;
+}
 
-QString hpis::GPCamera::errorCodeToString(int errorCode)
+QString GPCamera::errorCodeToString(int errorCode)
 {
     switch (errorCode) {
     case GP_OK:
@@ -307,7 +356,7 @@ QString hpis::GPCamera::errorCodeToString(int errorCode)
     }
 }
 
-bool hpis::GPCamera::readCameraSettings()
+bool GPCamera::readCameraSettings()
 {
     int ret;
     QString currentCaptureMode;
@@ -477,7 +526,7 @@ bool hpis::GPCamera::readCameraSettings()
     return true;
 }
 
-int hpis::GPCamera::gpGetRangeWidgetInfo(QString widgetName, float* min, float* max, float* increment)
+int GPCamera::gpGetRangeWidgetInfo(QString widgetName, float* min, float* max, float* increment)
 {
     int ret;
     CameraWidget* widget;
@@ -498,7 +547,7 @@ int hpis::GPCamera::gpGetRangeWidgetInfo(QString widgetName, float* min, float* 
     return ret;
 }
 
-bool hpis::GPCamera::extractWidgetChoices(QString widgetName, QList<QString>& choices)
+bool GPCamera::extractWidgetChoices(QString widgetName, QList<QString>& choices)
 {
     int ret;
     CameraWidget* widget;
@@ -536,7 +585,7 @@ bool hpis::GPCamera::extractWidgetChoices(QString widgetName, QList<QString>& ch
 
 
 
-int hpis::GPCamera::gpSetToggleWidget(QString widgetName, int toggleValue)
+int GPCamera::gpSetToggleWidget(QString widgetName, int toggleValue)
 {
     int ret;
     CameraWidget* widget ;
@@ -561,7 +610,7 @@ int hpis::GPCamera::gpSetToggleWidget(QString widgetName, int toggleValue)
     return GP_OK;
 }
 
-int hpis::GPCamera::gpSetRangeWidget(QString widgetName, float rangeValue)
+int GPCamera::gpSetRangeWidget(QString widgetName, float rangeValue)
 {
     CameraWidget* widget;
     int ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &widget, m_context);
@@ -587,7 +636,7 @@ int hpis::GPCamera::gpSetRangeWidget(QString widgetName, float rangeValue)
     return GP_OK;
 }
 
-int hpis::GPCamera::gpSetRadioWidget(QString widgetName, QString radioValue)
+int GPCamera::gpSetRadioWidget(QString widgetName, QString radioValue)
 {
     CameraWidget* widget;
     int ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &widget, m_context);
@@ -614,36 +663,33 @@ int hpis::GPCamera::gpSetRadioWidget(QString widgetName, QString radioValue)
     return GP_OK;
 }
 
-int hpis::GPCamera::gpSetTextWidget(QString widgetName, QString textValue)
+int GPCamera::gpSetTextWidget(QString widgetName, QString textValue)
 {
     CameraWidget* widget;
     int ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &widget, m_context);
     if (ret < GP_OK)
     {
         reportError(QString("Unable to get single config %1: %2").arg(widgetName, errorCodeToString(ret)));
-        return false;
+        return ret;
     }
 
-    if (widget)
-    {
-        qInfo() << "Setting value :" << textValue << "to widget :" << widgetName;
-        int ret = gp_widget_set_value(widget, textValue.toStdString().c_str());
-        if (ret < GP_OK) {
-            reportError(QString("Unable to set text value to widget: %1 error: %2").arg(widgetName, errorCodeToString(ret)));
-            return false;
-        }
+    qInfo() << "Setting value :" << textValue << "to widget :" << widgetName;
+    ret = gp_widget_set_value(widget, textValue.toStdString().c_str());
+    if (ret < GP_OK) {
+        reportError(QString("Unable to set text value to widget: %1 error: %2").arg(widgetName, errorCodeToString(ret)));
+        return ret;
+    }
 
-        m_configChanged = true;
-        return true;
-    } else {
-        reportError(QString("Widget not found: %1").arg(widgetName));
-        return false;
+    ret = gp_camera_set_single_config(m_camera, widgetName.toStdString().c_str(), widget, m_context);
+    if (ret < GP_OK) {
+        reportError(QString("Unable to set text value to widget: %1 error: %2").arg(widgetName, errorCodeToString(ret)));
+        return ret;
     }
 
     return GP_OK;
 }
 
-int hpis::GPCamera::gpGetToggleWidgetValue(QString widgetName, int* value)
+int GPCamera::gpGetToggleWidgetValue(QString widgetName, int* value)
 {
     CameraWidget* cameraWidget;
     int ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &cameraWidget, m_context);
@@ -658,7 +704,7 @@ int hpis::GPCamera::gpGetToggleWidgetValue(QString widgetName, int* value)
     return GP_OK;
 }
 
-int hpis::GPCamera::gpGetRadioWidgetValue(QString widgetName, QString& value)
+int GPCamera::gpGetRadioWidgetValue(QString widgetName, QString& value)
 {
     CameraWidget* cameraWidget;
     int ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &cameraWidget, m_context);
@@ -682,7 +728,7 @@ int hpis::GPCamera::gpGetRadioWidgetValue(QString widgetName, QString& value)
     return GP_OK;
 }
 
-int hpis::GPCamera::gpGetRangeWidgetValue(QString widgetName, float* value)
+int GPCamera::gpGetRangeWidgetValue(QString widgetName, float* value)
 {
     CameraWidget* cameraWidget;
     int ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &cameraWidget, m_context);
@@ -697,17 +743,17 @@ int hpis::GPCamera::gpGetRangeWidgetValue(QString widgetName, float* value)
     return GP_OK;
 }
 
-QString hpis::GPCamera::viewfinderWidgetName()
+QString GPCamera::viewfinderWidgetName()
 {
     return "viewfinder";
 }
 
-QString hpis::GPCamera::captureModeWidgetName()
+QString GPCamera::captureModeWidgetName()
 {
     return "d1a6";
 }
 
-QString hpis::GPCamera::apertureWidgetName()
+QString GPCamera::apertureWidgetName()
 {
     if (m_viewfinder && m_captureMode == CaptureModeVideo)
     {
@@ -719,7 +765,7 @@ QString hpis::GPCamera::apertureWidgetName()
     }
 }
 
-QString hpis::GPCamera::shutterSpeedWidgetName()
+QString GPCamera::shutterSpeedWidgetName()
 {
     if (m_viewfinder)
     {
@@ -734,7 +780,7 @@ QString hpis::GPCamera::shutterSpeedWidgetName()
     }
 }
 
-QString hpis::GPCamera::isoWidgetName()
+QString GPCamera::isoWidgetName()
 {
     if (m_viewfinder && m_captureMode == CaptureModeVideo)
     {
@@ -744,68 +790,68 @@ QString hpis::GPCamera::isoWidgetName()
     }
 }
 
-QString hpis::GPCamera::isoAutoWidgetName()
+QString GPCamera::isoAutoWidgetName()
 {
     return "autoiso"; // d054
 }
 
 
-QString hpis::GPCamera::liveviewSelectorWidgetName()
+QString GPCamera::liveviewSelectorWidgetName()
 {
     return "d1a6";
 }
 
-QString hpis::GPCamera::afModeWidgetName()
+QString GPCamera::afModeWidgetName()
 {
     return "liveviewaffocus"; // d061
 }
 
-QString hpis::GPCamera::lvZoomRatioWidgetName()
+QString GPCamera::lvZoomRatioWidgetName()
 {
     return "d1a3";
 }
 
-QString hpis::GPCamera::exposureModeWidgetName()
+QString GPCamera::exposureModeWidgetName()
 {
     return "expprogram"; // 500e
 }
 
-QString hpis::GPCamera::afAreaWidgetName()
+QString GPCamera::afAreaWidgetName()
 {
     return "changeafarea"; // 9205
 }
 
-QString hpis::GPCamera::afAtWidgetName()
+QString GPCamera::afAtWidgetName()
 {
     return "liveviewafmode"; // d05d
 }
 
-QString hpis::GPCamera::afDriveWidgetName()
+QString GPCamera::afDriveWidgetName()
 {
     return "autofocusdrive";
 }
 
-QString hpis::GPCamera::recordingMediaWidgetName()
+QString GPCamera::recordingMediaWidgetName()
 {
     return "recordingmedia";
 }
 
-QString hpis::GPCamera::captureTargetWidgetName()
+QString GPCamera::captureTargetWidgetName()
 {
     return "capturetarget";
 }
 
-QString hpis::GPCamera::stillCaptureModeWidgetName()
+QString GPCamera::stillCaptureModeWidgetName()
 {
     return "capturemode";
 }
 
-QString hpis::GPCamera::exposurePreviewWidgetName()
+QString GPCamera::exposurePreviewWidgetName()
 {
     return "d1a5";
 }
 
-QString hpis::GPCamera::exposureCompensationWidgetName()
+QString GPCamera::exposureCompensationWidgetName()
 {
     if (m_viewfinder && m_captureMode == CaptureModeVideo)
     {
@@ -815,22 +861,22 @@ QString hpis::GPCamera::exposureCompensationWidgetName()
     }
 }
 
-QString hpis::GPCamera::programShiftValueWidgetName()
+QString GPCamera::programShiftValueWidgetName()
 {
     return "flexibleprogram"; // d109
 }
 
-QString hpis::GPCamera::exposureIndicatorWidgetName()
+QString GPCamera::exposureIndicatorWidgetName()
 {
     return "lightmeter"; // d1b1
 }
 
-hpis::Camera::CaptureMode hpis::GPCamera::captureMode()
+hpis::Camera::CaptureMode GPCamera::captureMode()
 {
     return m_captureMode;
 }
 
-QString hpis::GPCamera::aperture()
+QString GPCamera::aperture()
 {
     if (m_cameraAperture > -1 && m_cameraAperture < m_cameraApertures.size())
     {
@@ -840,7 +886,7 @@ QString hpis::GPCamera::aperture()
     }
 }
 
-QString hpis::GPCamera::shutterSpeed()
+QString GPCamera::shutterSpeed()
 {
     if (m_cameraShutterSpeed > -1 && m_cameraShutterSpeed < m_cameraShutterSpeeds.size())
     {
@@ -850,7 +896,7 @@ QString hpis::GPCamera::shutterSpeed()
     }
 }
 
-QString hpis::GPCamera::iso()
+QString GPCamera::iso()
 {
     if (m_cameraIso > -1 && m_cameraIso < m_cameraIsos.size())
     {
@@ -860,12 +906,12 @@ QString hpis::GPCamera::iso()
     }
 }
 
-bool hpis::GPCamera::isoAuto()
+bool GPCamera::isoAuto()
 {
     return m_cameraIsoAuto;
 }
 
-bool hpis::GPCamera::setIsoAuto(bool isoAuto)
+bool GPCamera::setIsoAuto(bool isoAuto)
 {
     int ret;
     if (isoAuto)
@@ -886,7 +932,7 @@ bool hpis::GPCamera::setIsoAuto(bool isoAuto)
     }
 }
 
-QString hpis::GPCamera::exposureMode()
+QString GPCamera::exposureMode()
 {
     if (m_exposureMode > -1 && m_exposureMode < m_exposureModes.size())
     {
@@ -896,7 +942,7 @@ QString hpis::GPCamera::exposureMode()
     }
 }
 
-QString hpis::GPCamera::lvZoomRatio()
+QString GPCamera::lvZoomRatio()
 {
     if (m_lvZoomRatio > -1 && m_lvZoomRatio < m_lvZoomRatios.size())
     {
@@ -906,7 +952,7 @@ QString hpis::GPCamera::lvZoomRatio()
     }
 }
 
-bool hpis::GPCamera::setRecordingMedia(RecordingMedia recordingMedia)
+bool GPCamera::setRecordingMedia(RecordingMedia recordingMedia)
 {
     int ret = gpSetRadioWidget(recordingMediaWidgetName(), m_recordingMedias[recordingMedia]);
     if (ret == GP_OK)
@@ -918,7 +964,7 @@ bool hpis::GPCamera::setRecordingMedia(RecordingMedia recordingMedia)
     }
 }
 
-QString hpis::GPCamera::recordingMedia()
+QString GPCamera::recordingMedia()
 {
     if (m_recordingMedia > -1 && m_recordingMedia < m_recordingMedias.size())
     {
@@ -928,12 +974,12 @@ QString hpis::GPCamera::recordingMedia()
     }
 }
 
-bool hpis::GPCamera::setCaptureTarget(CaptureTarget captureTarget)
+bool GPCamera::setCaptureTarget(CaptureTarget captureTarget)
 {
     return gpSetRadioWidget(captureTargetWidgetName(), m_captureTargets[captureTarget]);
 }
 
-QString hpis::GPCamera::captureTarget()
+QString GPCamera::captureTarget()
 {
     if (m_captureTarget > -1 && m_captureTarget < m_captureTargets.size())
     {
@@ -943,7 +989,7 @@ QString hpis::GPCamera::captureTarget()
     }
 }
 
-bool hpis::GPCamera::setStillCaptureMode(StillCaptureMode stillCaptureMode)
+bool GPCamera::setStillCaptureMode(StillCaptureMode stillCaptureMode)
 {
     int ret = gpSetRadioWidget(stillCaptureModeWidgetName(), m_stillCaptureModes[stillCaptureMode]);
     if (ret == GP_OK)
@@ -955,7 +1001,7 @@ bool hpis::GPCamera::setStillCaptureMode(StillCaptureMode stillCaptureMode)
     }
 }
 
-QString hpis::GPCamera::stillCaptureMode()
+QString GPCamera::stillCaptureMode()
 {
     if (m_stillCaptureMode > -1 && m_stillCaptureMode < m_stillCaptureModes.size())
     {
@@ -965,7 +1011,7 @@ QString hpis::GPCamera::stillCaptureMode()
     }
 }
 
-bool hpis::GPCamera::setExposurePreview(bool exposurePreview)
+bool GPCamera::setExposurePreview(bool exposurePreview)
 {
     int ret;
     if (exposurePreview)
@@ -984,12 +1030,12 @@ bool hpis::GPCamera::setExposurePreview(bool exposurePreview)
     }
 }
 
-bool hpis::GPCamera::exposurePreview()
+bool GPCamera::exposurePreview()
 {
     return m_exposurePreview;
 }
 
-bool hpis::GPCamera::setCaptureMode(CaptureMode captureMode)
+bool GPCamera::setCaptureMode(CaptureMode captureMode)
 {
     int ret;
     QString value;
@@ -1020,7 +1066,7 @@ bool hpis::GPCamera::setCaptureMode(CaptureMode captureMode)
     }
 }
 
-bool hpis::GPCamera::increaseAperture()
+bool GPCamera::increaseAperture()
 {
     if (m_cameraAperture < m_cameraApertures.length() - 1)
     {
@@ -1038,7 +1084,7 @@ bool hpis::GPCamera::increaseAperture()
     }
 }
 
-bool hpis::GPCamera::decreaseAperture()
+bool GPCamera::decreaseAperture()
 {
     if (m_cameraAperture > 0)
     {
@@ -1055,7 +1101,7 @@ bool hpis::GPCamera::decreaseAperture()
     }
 }
 
-bool hpis::GPCamera::increaseShutterSpeed()
+bool GPCamera::increaseShutterSpeed()
 {
     if (m_cameraShutterSpeed < m_cameraShutterSpeeds.length() - 1)
     {
@@ -1072,7 +1118,7 @@ bool hpis::GPCamera::increaseShutterSpeed()
     }
 }
 
-bool hpis::GPCamera::decreaseShutterSpeed()
+bool GPCamera::decreaseShutterSpeed()
 {
     if (m_cameraShutterSpeed > 0)
     {
@@ -1089,7 +1135,7 @@ bool hpis::GPCamera::decreaseShutterSpeed()
     }
 }
 
-bool hpis::GPCamera::setIso(QString iso)
+bool GPCamera::setIso(QString iso)
 {
     int i = m_cameraIsos.indexOf(iso);
     if (i == -1)
@@ -1107,7 +1153,7 @@ bool hpis::GPCamera::setIso(QString iso)
     }
 }
 
-bool hpis::GPCamera::increaseIso()
+bool GPCamera::increaseIso()
 {
     if (m_cameraIso < m_cameraIsos.length() - 1)
     {
@@ -1124,7 +1170,7 @@ bool hpis::GPCamera::increaseIso()
     }
 }
 
-bool hpis::GPCamera::decreaseIso()
+bool GPCamera::decreaseIso()
 {
     if (m_cameraIso > 0)
     {
@@ -1142,7 +1188,7 @@ bool hpis::GPCamera::decreaseIso()
 }
 
 
-bool hpis::GPCamera::exposureModePlus()
+bool GPCamera::exposureModePlus()
 {
     if (m_exposureMode < m_exposureModes.length() - 1)
     {
@@ -1160,7 +1206,7 @@ bool hpis::GPCamera::exposureModePlus()
     }
 }
 
-bool hpis::GPCamera::exposureModeMinus()
+bool GPCamera::exposureModeMinus()
 {
     if (m_exposureMode > 0)
     {
@@ -1180,7 +1226,7 @@ bool hpis::GPCamera::exposureModeMinus()
 
 
 
-bool hpis::GPCamera::increaseLvZoomRatio()
+bool GPCamera::increaseLvZoomRatio()
 {
     if (m_lvZoomRatio < m_lvZoomRatios.length() - 1)
     {
@@ -1197,7 +1243,7 @@ bool hpis::GPCamera::increaseLvZoomRatio()
     }
 }
 
-bool hpis::GPCamera::decreaseLvZoomRatio()
+bool GPCamera::decreaseLvZoomRatio()
 {
     if (m_lvZoomRatio > 0)
     {
@@ -1214,10 +1260,15 @@ bool hpis::GPCamera::decreaseLvZoomRatio()
     }
 }
 
-bool hpis::GPCamera::afDrive()
+bool GPCamera::afDrive()
 {
     int ret = gpSetToggleWidget(afDriveWidgetName(), 1);
-    if (ret < GP_OK)
+    if (ret != GP_OK)
+    {
+        return false;
+    }
+    ret = gpSetToggleWidget(afDriveWidgetName(), 0);
+    if (ret != GP_OK)
     {
         return false;
     }
@@ -1225,27 +1276,29 @@ bool hpis::GPCamera::afDrive()
     return true;
 }
 
-bool hpis::GPCamera::changeAfArea(int x, int y)
+bool GPCamera::changeAfArea(int x, int y)
 {
+    int ret;
     //setRadioWidget(afAtWidgetName(), "3");
     //setRadioWidget(afModeWidgetName(), "0");
     //applyCameraSettings();
     QString textValue = QString().sprintf("%dx%d", x * 7360 / 640, y * 4912 / 426);
-    gpSetTextWidget(afAreaWidgetName(), textValue);
+    ret = gpSetTextWidget(afAreaWidgetName(), textValue);
+    if (ret != GP_OK)
+    {
+        return false;
+    }
     //applyCameraSettings();
     //refreshCameraSettings();
-    gpSetToggleWidget(afDriveWidgetName(), 1);
-    //gpSetToggleWidget(afDriveWidgetName(), 0);
-    //applyCameraSettings();
-    return true;
+    return afDrive();
 }
 
-int hpis::GPCamera::programShiftValue()
+int GPCamera::programShiftValue()
 {
     return m_programShiftValue;
 }
 
-bool hpis::GPCamera::setProgramShiftValue(int value)
+bool GPCamera::setProgramShiftValue(int value)
 {
     float fValue = (float) value;
 
@@ -1259,17 +1312,17 @@ bool hpis::GPCamera::setProgramShiftValue(int value)
     }
 }
 
-int hpis::GPCamera::programShiftValueMin()
+int GPCamera::programShiftValueMin()
 {
     return m_programShiftValueMin;
 }
 
-int hpis::GPCamera::programShiftValueMax()
+int GPCamera::programShiftValueMax()
 {
     return m_programShiftValueMax;
 }
 
-int hpis::GPCamera::programShiftValueStep()
+int GPCamera::programShiftValueStep()
 {
     return m_programShiftValueStep;
 }
@@ -1277,7 +1330,7 @@ int hpis::GPCamera::programShiftValueStep()
 
 
 
-QString hpis::GPCamera::exposureCompensation()
+QString GPCamera::exposureCompensation()
 {
     if (m_exposureCompensation > -1 && m_exposureCompensation < m_exposureCompensations.size())
     {
@@ -1287,7 +1340,7 @@ QString hpis::GPCamera::exposureCompensation()
     }
 }
 
-bool hpis::GPCamera::setExposureCompensation(QString value)
+bool GPCamera::setExposureCompensation(QString value)
 {
     int i = m_exposureCompensations.indexOf(value);
     if (i == -1)
@@ -1305,7 +1358,7 @@ bool hpis::GPCamera::setExposureCompensation(QString value)
     }
 }
 
-bool hpis::GPCamera::increaseExposureCompensation()
+bool GPCamera::increaseExposureCompensation()
 {
     if (m_exposureCompensation < m_exposureCompensations.length() - 1)
     {
@@ -1322,7 +1375,7 @@ bool hpis::GPCamera::increaseExposureCompensation()
     }
 }
 
-bool hpis::GPCamera::decreaseExposureCompensation()
+bool GPCamera::decreaseExposureCompensation()
 {
     if (m_exposureCompensation > 0)
     {

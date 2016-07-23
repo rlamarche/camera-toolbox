@@ -17,6 +17,8 @@ class CameraServer : public QObject
 public:
     explicit CameraServer(CameraThread* cameraThread, QObject *parent = 0);
     
+    void ctrlShutdown();
+    
 protected:
     void processRequest(qhttp::server::QHttpRequest* req, qhttp::server::QHttpResponse* res);
     

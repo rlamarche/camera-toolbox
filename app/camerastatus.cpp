@@ -1,32 +1,48 @@
 #include "camerastatus.h"
 
-hpis::CameraStatus::CameraStatus()
+using namespace hpis;
+
+CameraStatus::CameraStatus()
 {
 
 }
 
+Camera::CaptureMode CameraStatus::captureMode()
+{
+    return m_captureMode;
+}
 
-QString hpis::CameraStatus::aperture()
+bool CameraStatus::isInLiveView()
+{
+    return m_isInLiveView;
+}
+
+bool CameraStatus::isRecording()
+{
+    return m_isRecording;
+}
+
+QString CameraStatus::aperture()
 {
     return m_aperture;
 }
 
-QString hpis::CameraStatus::iso()
+QString CameraStatus::iso()
 {
     return m_iso;
 }
 
-bool hpis::CameraStatus::isoAuto()
+bool CameraStatus::isoAuto()
 {
     return m_isoAuto;
 }
 
-QString hpis::CameraStatus::shutterSpeed()
+QString CameraStatus::shutterSpeed()
 {
     return m_shutterSpeed;
 }
 
-bool hpis::CameraStatus::exposurePreview()
+bool CameraStatus::exposurePreview()
 {
     return m_exposurePreview;
 }

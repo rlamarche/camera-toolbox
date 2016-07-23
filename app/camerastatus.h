@@ -4,15 +4,20 @@
 #include <QString>
 #include <QCoreApplication>
 
+#include "camera.h"
+
 namespace hpis {
 
-class Camera;
 
 class CameraStatus
 {
     friend class Camera;
 public:
     CameraStatus();
+
+    Camera::CaptureMode captureMode();
+    bool isInLiveView();
+    bool isRecording();
 
     QString aperture();
     QString shutterSpeed();
@@ -21,6 +26,10 @@ public:
     bool exposurePreview();
 
 private:
+    Camera::CaptureMode m_captureMode;
+    bool m_isInLiveView;
+    bool m_isRecording;
+
     QString m_aperture;
     QString m_shutterSpeed;
     QString m_iso;

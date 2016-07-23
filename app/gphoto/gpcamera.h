@@ -54,12 +54,14 @@ public:
     bool capturePhoto();
     bool startRecordMovie();
     bool stopRecordMovie();
+    bool isRecording();
     bool readCameraSettings();
 
     bool afDrive();
 
     bool startLiveView();
-    bool stopLiveview();
+    bool stopLiveView();
+    bool isInLiveView();
 
     bool setCaptureMode(CaptureMode captureMode);
     CaptureMode captureMode();
@@ -191,6 +193,9 @@ private:
 
     // Camera settings
     CaptureMode m_captureMode;
+
+    bool m_isInLiveView;
+    bool m_isRecording;
 
     QList<QString> m_cameraApertures;
     int m_cameraAperture;

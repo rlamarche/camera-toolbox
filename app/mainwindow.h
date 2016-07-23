@@ -19,6 +19,8 @@
 #include <gphoto2/gphoto2-port-info-list.h>
 
 
+using namespace hpis;
+
 namespace Ui {
 class MainWindow;
 }
@@ -28,16 +30,11 @@ class MainWindow : public QOpenGLWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(hpis::CameraThread* camera);
+    explicit MainWindow(CameraThread* camera);
     ~MainWindow();
 
 protected:
     int findWidgets(CameraWidget* widget);
-
-    /*
-    int setToggleWidget(QString widgetName, int toggleValue);
-    int setRangeWidget(QString widgetName, float rangeValue);
-    int updateConfig();*/
 
     // Events
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
@@ -52,7 +49,7 @@ private:
     QTimer*                 m_liveviewTimer;
 
     // Threads
-    hpis::CameraThread* m_cameraThread;
+    CameraThread* m_cameraThread;
 
     // Data
     int m_overscanLeft;
@@ -65,7 +62,7 @@ private:
     float m_fps;
     QRect m_imageRect;
 
-    hpis::CameraStatus m_cameraStatus;
+    CameraStatus m_cameraStatus;
 
    // ImageAnalyzer* m_imageAnalyzer;
    // HistogramDisplay* m_histogramDisplay;

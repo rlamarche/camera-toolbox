@@ -45,6 +45,7 @@
 /* time zero for debug log time stamps */
 static struct timeval glob_tv_zero = { 0, 0 };
 
+using namespace hpis;
 
 static void
 debug_func (GPLogLevel level, const char *domain, const char *str, void *data)

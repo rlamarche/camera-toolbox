@@ -1,13 +1,19 @@
 #include "camera.h"
+#include "camerastatus.h"
 
-hpis::Camera::Camera(QObject *parent) : QObject(parent)
+using namespace hpis;
+
+Camera::Camera(QObject *parent) : QObject(parent)
 {
 
 }
 
-hpis::CameraStatus hpis::Camera::status()
+CameraStatus hpis::Camera::status()
 {
     CameraStatus cs;
+    cs.m_captureMode = captureMode();
+    cs.m_isInLiveView = isInLiveView();
+    cs.m_isRecording = isRecording();
     cs.m_aperture = aperture();
     cs.m_shutterSpeed = shutterSpeed();
     cs.m_iso = iso();

@@ -4,9 +4,11 @@
 #include <QObject>
 
 #include "camerapreview.h"
-#include "camerastatus.h"
+//#include "camerastatus.h"
 
 namespace hpis {
+
+class CameraStatus;
 
 class Camera : public QObject
 {
@@ -16,7 +18,6 @@ public:
         CaptureModePhoto,
         CaptureModeVideo
     };
-
 
     explicit Camera(QObject *parent = 0);
     virtual ~Camera() {};
@@ -30,11 +31,13 @@ public:
     virtual bool capturePhoto() = 0;
     virtual bool startRecordMovie() = 0;
     virtual bool stopRecordMovie() = 0;
+    virtual bool isRecording() = 0;
 
     virtual bool afDrive() = 0;
 
     virtual bool startLiveView() = 0;
-    virtual bool stopLiveview() = 0;
+    virtual bool stopLiveView() = 0;
+    virtual bool isInLiveView() = 0;
 
     virtual bool setCaptureMode(CaptureMode captureMode) = 0;
     virtual CaptureMode captureMode() = 0;

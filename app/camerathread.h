@@ -58,6 +58,7 @@ public:
         CommandDisableExposurePreview,
 
         CommandToggleLiveview,
+        CommandStartStopMovie,
         CommandStartMovie,
         CommandStopMovie,
 
@@ -85,6 +86,7 @@ public:
     explicit CameraThread(hpis::Camera* camera, QObject *parent = 0);
     void stop();
     void executeCommand(Command executeCommand);
+    CameraStatus cameraStatus();
 
 protected:
     // Thread main loop
@@ -95,7 +97,7 @@ protected:
     void shutdown();
 
     // Camera control
-    void doCommand(Command executeCommand);
+    hpis::CameraStatus doCommand(Command executeCommand) const;
 
 
     void doCapturePreview();
@@ -107,8 +109,7 @@ private:
 
     // Thread control
     bool m_stop;
-    bool m_liveview;
-    bool m_recording;
+    hpis::CameraStatus m_cameraStatus;
 
     int refreshTimeoutMs;
 
@@ -131,7 +132,7 @@ private:
 signals:
     void previewAvailable(QPixmap preview);
     void imageAvailable(QImage preview);
-    void cameraStatus(hpis::CameraStatus cameraStatus);
+    void cameraStatusAvailable(hpis::CameraStatus cameraStatusAvailable);
 public slots:
     void capturePreview();
 };
