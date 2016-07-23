@@ -311,6 +311,7 @@ QString hpis::GPCamera::errorCodeToString(int errorCode)
 
 bool hpis::GPCamera::readCameraSettings()
 {
+    int ret;
     QString currentCaptureMode;
     gpGetRadioWidgetValue(captureModeWidgetName(), currentCaptureMode);
     if (!currentCaptureMode.isNull())
@@ -446,7 +447,43 @@ bool hpis::GPCamera::readCameraSettings()
         m_viewfinder = false;
     }
 
+    float currentProgramShiftValue;
+    ret = gpGetRangeWidgetValue(programShiftValueWidgetName(), &currentProgramShiftValue);
+    if (ret == GP_OK)
+    {
+        m_programShiftValue = (int) currentProgramShiftValue;
+    }
+    float min, max, step;
+    ret = gpGetRangeWidgetInfo(programShiftValueWidgetName(), &min, &max, &step);
+    if (ret == GP_OK)
+    {
+        m_programShiftValueMin = (int) min;
+        m_programShiftValueMax = (int) max;
+        m_programShiftValueStep = (int) step;
+    }
+
     return true;
+}
+
+int hpis::GPCamera::gpGetRangeWidgetInfo(QString widgetName, float* min, float* max, float* increment)
+{
+    int ret;
+    CameraWidget* widget;
+    ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &widget, m_context);
+    if (ret < GP_OK)
+    {
+        reportError(QString("Unable to get single config %1: %2").arg(widgetName, errorCodeToString(ret)));
+        return ret;
+    }
+
+    ret = gp_widget_get_range(widget, min, max, increment);
+    if (ret < GP_OK)
+    {
+        reportError(QString("Unable to get range on widget %1: %2").arg(widgetName, errorCodeToString(ret)));
+        return ret;
+    }
+
+    return ret;
 }
 
 bool hpis::GPCamera::extractWidgetChoices(QString widgetName, QList<QString>& choices)
@@ -755,6 +792,26 @@ QString hpis::GPCamera::stillCaptureModeWidgetName()
 QString hpis::GPCamera::exposurePreviewWidgetName()
 {
     return "d1a5";
+}
+
+QString hpis::GPCamera::exposureCompensationWidgetName()
+{
+    if (m_viewfinder && m_captureMode == CaptureModeVideo)
+    {
+        return "d1ab";
+    } else {
+        return "5010";
+    }
+}
+
+QString hpis::GPCamera::programShiftValueWidgetName()
+{
+    return "d109";
+}
+
+QString hpis::GPCamera::exposureIndicatorWidgetName()
+{
+    return "d1b1";
 }
 
 hpis::Camera::CaptureMode hpis::GPCamera::captureMode()
@@ -1082,6 +1139,7 @@ bool hpis::GPCamera::exposureModePlus()
         if (ret == GP_OK)
         {
             m_exposureMode = m_exposureMode + 1;
+            readCameraSettings();
             return true;
         } else {
             return false;
@@ -1099,6 +1157,7 @@ bool hpis::GPCamera::exposureModeMinus()
         if (ret == GP_OK)
         {
             m_exposureMode = m_exposureMode - 1;
+            readCameraSettings();
             return true;
         } else {
             return false;
@@ -1144,6 +1203,17 @@ bool hpis::GPCamera::decreaseLvZoomRatio()
     }
 }
 
+bool hpis::GPCamera::afDrive()
+{
+    int ret = gpSetToggleWidget(afDriveWidgetName(), 1);
+    if (ret < GP_OK)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 bool hpis::GPCamera::changeAfArea(int x, int y)
 {
     //setRadioWidget(afAtWidgetName(), "3");
@@ -1158,3 +1228,38 @@ bool hpis::GPCamera::changeAfArea(int x, int y)
     //applyCameraSettings();
     return true;
 }
+
+int hpis::GPCamera::programShiftValue()
+{
+    return m_programShiftValue;
+}
+
+bool hpis::GPCamera::setProgramShiftValue(int value)
+{
+    float fValue = (float) value;
+
+    int ret = gpSetRangeWidget(programShiftValueWidgetName(), fValue);
+    if (ret == GP_OK)
+    {
+        m_programShiftValue = value;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+int hpis::GPCamera::programShiftValueMin()
+{
+    return m_programShiftValueMin;
+}
+
+int hpis::GPCamera::programShiftValueMax()
+{
+    return m_programShiftValueMax;
+}
+
+int hpis::GPCamera::programShiftValueStep()
+{
+    return m_programShiftValueStep;
+}
+

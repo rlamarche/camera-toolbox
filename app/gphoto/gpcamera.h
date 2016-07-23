@@ -56,6 +56,8 @@ public:
     bool stopRecordMovie();
     bool readCameraSettings();
 
+    bool afDrive();
+
     bool startLiveView();
     bool stopLiveview();
 
@@ -103,6 +105,12 @@ public:
 
     bool changeAfArea(int x, int y);
 
+    bool setProgramShiftValue(int value);
+    int programShiftValue();
+    int programShiftValueMin();
+    int programShiftValueMax();
+    int programShiftValueStep();
+
 protected:
     void reportError(QString error);
     QString errorCodeToString(int errorCode);
@@ -121,6 +129,8 @@ protected:
     int gpSetRangeWidget(QString widgetName, float rangeValue);
     int gpSetRadioWidget(QString widgetName, QString radioValue);
     int gpSetTextWidget(QString widgetName, QString textValue);
+
+    int gpGetRangeWidgetInfo(QString widgetName, float* min, float* max, float* step);
 
     // widget names
     virtual QString viewfinderWidgetName();
@@ -148,6 +158,12 @@ protected:
     virtual QString stillCaptureModeWidgetName();
 
     virtual QString exposurePreviewWidgetName();
+
+    virtual QString exposureCompensationWidgetName();
+
+    virtual QString programShiftValueWidgetName();
+
+    virtual QString exposureIndicatorWidgetName();
 private:
 
     int m_cameraNumber;
@@ -200,6 +216,11 @@ private:
     bool m_viewfinder;
 
     bool m_exposurePreview;
+
+    int m_programShiftValue;
+    int m_programShiftValueMin;
+    int m_programShiftValueMax;
+    int m_programShiftValueStep;
 signals:
 
 public slots:

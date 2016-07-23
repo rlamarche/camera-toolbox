@@ -27,15 +27,22 @@ public:
     enum CommandType {
         CommandStartLiveview,
         CommandStopLiveview,
+
         CommandIncreaseAperture,
         CommandDecreaseAperture,
+
         CommandIncreaseShutterSpeed,
         CommandDecreaseShutterSpeed,
+
         CommandIncreaseIso,
         CommandDecreaseIso,
         CommandSetIso,
         CommandEnableIsoAuto,
         CommandDisableIsoAuto,
+
+        CommandIncreaseProgramShiftValue,
+        CommandDecreaseProgramShiftValue,
+
         CommandExposureModePlus,
         CommandExposureModeMinus,
         CommandIncreaseLvZoomRatio,
@@ -50,6 +57,8 @@ public:
         CommandToggleLiveview,
         CommandStartMovie,
         CommandStopMovie,
+
+        CommandAfDrive
     };
 
     class Command {

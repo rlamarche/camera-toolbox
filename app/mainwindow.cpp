@@ -35,7 +35,7 @@ MainWindow::MainWindow(hpis::CameraThread* cameraThread) :
     //m_histogramDisplay->setImageAnalyzer(m_imageAnalyzer);
 
     connect(m_cameraThread, SIGNAL(imageAvailable(QImage)), this, SLOT(showImage(QImage)));
-    connect(m_cameraThread, SIGNAL(cameraStatus(hpis::CameraThread::CameraStatus)), this, SLOT(cameraStatus(hpis::CameraThread::CameraStatus)));
+    connect(m_cameraThread, SIGNAL(cameraStatus(hpis::CameraStatus)), this, SLOT(cameraStatus(hpis::CameraStatus)));
 }
 
 MainWindow::~MainWindow()
@@ -109,6 +109,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         m_cameraThread->executeCommand(hpis::CameraThread::CommandToggleLiveview);
         break;
 
+    case Qt::Key_F:
+        m_cameraThread->executeCommand(hpis::CameraThread::CommandAfDrive);
+        break;
+
     case Qt::Key_C:
         m_cameraThread->executeCommand(hpis::CameraThread::CommandPhotoMode);
         break;
@@ -116,15 +120,24 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         m_cameraThread->executeCommand(hpis::CameraThread::CommandVideoMode);
         break;
 
-
     case Qt::Key_D:
-        m_cameraThread->executeCommand(hpis::CameraThread::CommandIncreaseAperture);
+        if (event->modifiers().testFlag(Qt::ShiftModifier))
+        {
+            m_cameraThread->executeCommand(hpis::CameraThread::CommandIncreaseProgramShiftValue);
+        } else {
+            m_cameraThread->executeCommand(hpis::CameraThread::CommandIncreaseAperture);
+        }
         break;
-    case Qt::Key_Q:
-        m_cameraThread->executeCommand(hpis::CameraThread::CommandDecreaseAperture);
+    case Qt::Key_A:
+        if (event->modifiers().testFlag(Qt::ShiftModifier))
+        {
+            m_cameraThread->executeCommand(hpis::CameraThread::CommandDecreaseProgramShiftValue);
+        } else {
+            m_cameraThread->executeCommand(hpis::CameraThread::CommandDecreaseAperture);
+        }
         break;
 
-    case Qt::Key_Z:
+    case Qt::Key_W:
         m_cameraThread->executeCommand(hpis::CameraThread::CommandIncreaseShutterSpeed);
         break;
     case Qt::Key_S:
@@ -134,7 +147,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     case Qt::Key_E:
         m_cameraThread->executeCommand(hpis::CameraThread::CommandIncreaseIso);
         break;
-    case Qt::Key_A:
+    case Qt::Key_Q:
         m_cameraThread->executeCommand(hpis::CameraThread::CommandDecreaseIso);
         break;
     case Qt::Key_T:
@@ -144,7 +157,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         m_cameraThread->executeCommand(hpis::CameraThread::CommandExposureModeMinus);
         break;
     case Qt::Key_I:
-        if (m_cameraStatus.isoAuto())
+        if (event->modifiers().testFlag(Qt::ShiftModifier))
         {
             m_cameraThread->executeCommand(hpis::CameraThread::CommandDisableIsoAuto);
         } else {
@@ -153,13 +166,12 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         break;
 
     case Qt::Key_P:
-        if (m_cameraStatus.exposurePreview())
+        if (event->modifiers().testFlag(Qt::ShiftModifier))
         {
             m_cameraThread->executeCommand(hpis::CameraThread::CommandDisableExposurePreview);
         } else {
             m_cameraThread->executeCommand(hpis::CameraThread::CommandEnableExposurePreview);
         }
-
         break;
 
     case Qt::Key_Plus:
@@ -246,6 +258,7 @@ void MainWindow::paintGL()
     p.drawText(0 - m_overscanLeft, 0 - m_overscanTop, QString("Aperture : %1").arg(m_cameraStatus.aperture()));
     p.drawText(width() - m_overscanRight - 500, 0 - m_overscanTop, QString("Speed : %1").arg(m_cameraStatus.shutterSpeed()));
 
+    p.drawText(width() - m_overscanRight - 500, this->height() + m_overscanBottom, QString("ISO : %1").arg(m_cameraStatus.iso()));
 
 
 

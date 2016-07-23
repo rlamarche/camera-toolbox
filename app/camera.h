@@ -31,6 +31,8 @@ public:
     virtual bool startRecordMovie() = 0;
     virtual bool stopRecordMovie() = 0;
 
+    virtual bool afDrive() = 0;
+
     virtual bool startLiveView() = 0;
     virtual bool stopLiveview() = 0;
 
@@ -69,6 +71,11 @@ public:
     virtual bool setExposurePreview(bool exposurePreview) = 0;
     virtual bool exposurePreview() = 0;
 
+    virtual bool setProgramShiftValue(int value) = 0;
+    virtual int programShiftValue() = 0;
+    virtual int programShiftValueMax() = 0;
+    virtual int programShiftValueMin() = 0;
+    virtual int programShiftValueStep() = 0;
 
     CameraStatus status();
 signals:

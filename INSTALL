@@ -1,0 +1,28 @@
+sudo nano /etc/apt/sources.list
+# uncomment src
+
+sudo apt-get update
+
+sudo apt-get build-dep qt4-x11
+sudo apt-get install apt-transport-https
+
+sudo apt-get build-dep qt4-x11
+sudo apt-get build-dep libqt5gui5
+
+sudo apt-get install libudev-dev libinput-dev libts-dev libxcb-xinerama0-dev htop
+sudo apt-get install libltdl-dev
+sudo apt-get install libexif-dev
+sudo apt-get install libturbojpeg1-dev
+sudo apt-get install libusb-dev
+sudo apt-get install libusb-1.0-0-dev
+sudo apt-get install gdb-multiarch
+sudo apt-get install xkb-data console-data
+sudo apt-get install gphoto2
+
+RUN :
+
+ENV VARS :
+
+QT_QPA_EGLFS_FORCE888=1
+QT_QPA_EVDEV_KEYBOARD_PARAMETERS="keymap=/home/pi/fr.qmap"
+

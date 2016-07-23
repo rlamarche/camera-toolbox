@@ -137,6 +137,7 @@ void hpis::CameraThread::run()
             {
                 command = m_commandQueue.dequeue();
                 doCommand(command);
+                emit cameraStatus(m_camera->status());
             }
         }
         m_mutex.unlock();
@@ -193,7 +194,7 @@ void hpis::CameraThread::previewDecoded(QImage image)
 
 void hpis::CameraThread::doCommand(Command command)
 {
-    int ret;
+    int programShiftValue;
     switch (command.type()) {
     case CommandStartLiveview:
         if (m_camera->startLiveView())
@@ -255,6 +256,24 @@ void hpis::CameraThread::doCommand(Command command)
         m_camera->decreaseIso();
         break;
 
+
+    case CommandIncreaseProgramShiftValue:
+        programShiftValue = m_camera->programShiftValue();
+        if (programShiftValue <= m_camera->programShiftValueMax() - m_camera->programShiftValueStep())
+        {
+            programShiftValue += m_camera->programShiftValueStep();
+            m_camera->setProgramShiftValue(programShiftValue);
+        }
+        break;
+    case CommandDecreaseProgramShiftValue:
+        programShiftValue = m_camera->programShiftValue();
+        if (programShiftValue >= m_camera->programShiftValueMin() + m_camera->programShiftValueStep())
+        {
+            programShiftValue -= m_camera->programShiftValueStep();
+            m_camera->setProgramShiftValue(programShiftValue);
+        }
+        break;
+
     case CommandExposureModePlus:
         m_camera->exposureModePlus();
         break;
@@ -305,6 +324,10 @@ void hpis::CameraThread::doCommand(Command command)
         break;
     case CommandVideoMode:
         m_camera->setCaptureMode(hpis::Camera::CaptureModeVideo);
+        break;
+
+    case CommandAfDrive:
+        m_camera->afDrive();
         break;
 
     default: break;
