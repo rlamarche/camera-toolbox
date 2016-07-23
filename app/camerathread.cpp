@@ -195,6 +195,8 @@ void hpis::CameraThread::previewDecoded(QImage image)
 void hpis::CameraThread::doCommand(Command command)
 {
     int programShiftValue;
+    int exposureCompensation;
+
     switch (command.type()) {
     case CommandStartLiveview:
         if (m_camera->startLiveView())
@@ -273,6 +275,15 @@ void hpis::CameraThread::doCommand(Command command)
             m_camera->setProgramShiftValue(programShiftValue);
         }
         break;
+
+
+    case CommandIncreaseExposureCompensation:
+        m_camera->increaseExposureCompensation();
+        break;
+    case CommandDecreaseExposureCompensation:
+        m_camera->decreaseExposureCompensation();
+        break;
+
 
     case CommandExposureModePlus:
         m_camera->exposureModePlus();

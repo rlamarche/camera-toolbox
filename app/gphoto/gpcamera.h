@@ -111,6 +111,11 @@ public:
     int programShiftValueMax();
     int programShiftValueStep();
 
+    bool setExposureCompensation(QString value);
+    QString exposureCompensation();
+    bool increaseExposureCompensation();
+    bool decreaseExposureCompensation();
+
 protected:
     void reportError(QString error);
     QString errorCodeToString(int errorCode);
@@ -221,6 +226,10 @@ private:
     int m_programShiftValueMin;
     int m_programShiftValueMax;
     int m_programShiftValueStep;
+
+    QList<QString> m_exposureCompensations;
+    int m_exposureCompensation;
+
 signals:
 
 public slots:

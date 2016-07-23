@@ -43,6 +43,9 @@ public:
         CommandIncreaseProgramShiftValue,
         CommandDecreaseProgramShiftValue,
 
+        CommandIncreaseExposureCompensation,
+        CommandDecreaseExposureCompensation,
+
         CommandExposureModePlus,
         CommandExposureModeMinus,
         CommandIncreaseLvZoomRatio,

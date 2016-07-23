@@ -447,13 +447,14 @@ bool hpis::GPCamera::readCameraSettings()
         m_viewfinder = false;
     }
 
+    float min, max, step;
+
     float currentProgramShiftValue;
     ret = gpGetRangeWidgetValue(programShiftValueWidgetName(), &currentProgramShiftValue);
     if (ret == GP_OK)
     {
         m_programShiftValue = (int) currentProgramShiftValue;
     }
-    float min, max, step;
     ret = gpGetRangeWidgetInfo(programShiftValueWidgetName(), &min, &max, &step);
     if (ret == GP_OK)
     {
@@ -461,6 +462,19 @@ bool hpis::GPCamera::readCameraSettings()
         m_programShiftValueMax = (int) max;
         m_programShiftValueStep = (int) step;
     }
+
+
+    extractWidgetChoices(exposureCompensationWidgetName(), m_exposureCompensations);
+
+    QString currentExposureCompensation;
+    gpGetRadioWidgetValue(exposureCompensationWidgetName(), currentExposureCompensation);
+    if (!currentExposureCompensation.isNull())
+    {
+        m_exposureCompensation = m_exposureCompensations.indexOf(currentExposureCompensation);
+    } else {
+        m_exposureCompensation = -1;
+    }
+
 
     return true;
 }
@@ -1263,3 +1277,67 @@ int hpis::GPCamera::programShiftValueStep()
     return m_programShiftValueStep;
 }
 
+
+
+
+QString hpis::GPCamera::exposureCompensation()
+{
+    if (m_exposureCompensation > -1 && m_exposureCompensation < m_exposureCompensations.size())
+    {
+        return m_exposureCompensations[m_exposureCompensation];
+    } else {
+        return QString::null;
+    }
+}
+
+bool hpis::GPCamera::setExposureCompensation(QString value)
+{
+    int i = m_exposureCompensations.indexOf(value);
+    if (i == -1)
+    {
+        return false;
+    }
+
+    int ret = gpSetRadioWidget(exposureCompensationWidgetName(), m_exposureCompensations[i]);
+    if (ret == GP_OK)
+    {
+        m_exposureCompensation = i;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool hpis::GPCamera::increaseExposureCompensation()
+{
+    if (m_exposureCompensation < m_exposureCompensations.length() - 1)
+    {
+        int ret = gpSetRadioWidget(exposureCompensationWidgetName(), m_exposureCompensations[m_exposureCompensation + 1]);
+        if (ret == GP_OK)
+        {
+            m_exposureCompensation = m_exposureCompensation + 1;
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+bool hpis::GPCamera::decreaseExposureCompensation()
+{
+    if (m_exposureCompensation > 0)
+    {
+        int ret = gpSetRadioWidget(exposureCompensationWidgetName(), m_exposureCompensations[m_exposureCompensation - 1]);
+        if (ret == GP_OK)
+        {
+            m_exposureCompensation = m_exposureCompensation - 1;
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}

@@ -77,6 +77,11 @@ public:
     virtual int programShiftValueMin() = 0;
     virtual int programShiftValueStep() = 0;
 
+    virtual bool setExposureCompensation(QString value) = 0;
+    virtual QString exposureCompensation() = 0;
+    virtual bool increaseExposureCompensation() = 0;
+    virtual bool decreaseExposureCompensation() = 0;
+
     CameraStatus status();
 signals:
 

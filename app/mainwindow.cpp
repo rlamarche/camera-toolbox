@@ -145,11 +145,22 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         break;
 
     case Qt::Key_E:
-        m_cameraThread->executeCommand(hpis::CameraThread::CommandIncreaseIso);
+        if (event->modifiers().testFlag(Qt::ShiftModifier))
+        {
+            m_cameraThread->executeCommand(hpis::CameraThread::CommandIncreaseExposureCompensation);
+        } else {
+            m_cameraThread->executeCommand(hpis::CameraThread::CommandIncreaseIso);
+        }
         break;
     case Qt::Key_Q:
-        m_cameraThread->executeCommand(hpis::CameraThread::CommandDecreaseIso);
+        if (event->modifiers().testFlag(Qt::ShiftModifier))
+        {
+            m_cameraThread->executeCommand(hpis::CameraThread::CommandDecreaseExposureCompensation);
+        } else {
+            m_cameraThread->executeCommand(hpis::CameraThread::CommandDecreaseIso);
+        }
         break;
+
     case Qt::Key_T:
         m_cameraThread->executeCommand(hpis::CameraThread::CommandExposureModePlus);
         break;
