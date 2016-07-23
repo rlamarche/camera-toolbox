@@ -344,3 +344,4 @@ void hpis::CameraThread::doCommand(Command command)
     default: break;
     }
 }
+

@@ -127,13 +127,11 @@ bool hpis::GPCamera::capturePreview(CameraPreview** cameraPreview)
 
 bool hpis::GPCamera::startRecordMovie()
 {
-//#define HPIS_CONFIG_KEY_START_MOVIE "movie"
     gpSetToggleWidget("movie", 1);
 }
 
 bool hpis::GPCamera::stopRecordMovie()
 {
-//#define HPIS_CONFIG_KEY_STOP_MOVIE "920b"
     gpSetToggleWidget("movie", 0);
 }
 

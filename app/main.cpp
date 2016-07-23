@@ -28,6 +28,9 @@
 #include <sys/time.h>
 #include <ltdl.h>
 
+#include <signal.h>
+#include <unistd.h>
+
 
 // HPIS
 #include "camerathread.h"
@@ -153,6 +156,26 @@ bool lookupCamera(hpis::Camera** camera) {
     return true;
 }
 
+
+
+void catchUnixSignals(const std::vector<int>& quitSignals,
+                      const std::vector<int>& ignoreSignals = std::vector<int>()) {
+
+    auto handler = [](int sig) ->void {
+        printf("\nquit the application (user request signal = %d).\n", sig);
+        QCoreApplication::quit();
+    };
+
+    // all these signals will be ignored.
+    for ( int sig : ignoreSignals )
+        signal(sig, SIG_IGN);
+
+    // each of these signals calls the handler (quits the QCoreApplication).
+    for ( int sig : quitSignals )
+        signal(sig, handler);
+}
+
+
 int main(int argc, char *argv[])
 {
     qRegisterMetaType<hpis::CameraStatus>();
@@ -220,12 +243,14 @@ int main(int argc, char *argv[])
     debug_action(NULL, "out.log");
 
     QApplication a(argc, argv);
+    catchUnixSignals({SIGQUIT, SIGINT, SIGTERM, SIGHUP});
 
     hpis::Camera* camera;
 
     if (lookupCamera(&camera))
     {
         hpis::CameraThread cameraThread(camera);
+
         MainWindow w(&cameraThread);
         hpis::CameraServer cameraServer(&cameraThread);
 
@@ -239,6 +264,22 @@ int main(int argc, char *argv[])
 
         QHttpServer server(&a);
         // listening on 0.0.0.0:8080
+void catchUnixSignals(const std::vector<int>& quitSignals,
+                      const std::vector<int>& ignoreSignals = std::vector<int>()) {
+
+    auto handler = [](int sig) ->void {
+        printf("\nquit the application (user request signal = %d).\n", sig);
+        QCoreApplication::quit();
+    };
+
+    // all these signals will be ignored.
+    for ( int sig : ignoreSignals )
+        signal(sig, SIG_IGN);
+
+    // each of these signals calls the handler (quits the QCoreApplication).
+    for ( int sig : quitSignals )
+        signal(sig, handler);
+}
         server.listen(QHostAddress::Any, 8080, [](QHttpRequest* req, QHttpResponse* res) {
 
             qInfo() << "Url" << req->url();

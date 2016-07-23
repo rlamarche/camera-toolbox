@@ -33,7 +33,7 @@ void hpis::CameraServer::ctrlSet(QMap<QString, QString> params)
     }
 }
 
-void CameraServer::ctrlMode(QMap<QString, QString> params)
+void hpis::CameraServer::ctrlMode(QMap<QString, QString> params)
 {
     QString value = params["action"];
 

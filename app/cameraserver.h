@@ -22,6 +22,8 @@ protected:
     
     void ctrlSet(QMap<QString, QString> params);
     
+    void ctrlMode(QMap<QString, QString> params);
+
 private:
     CameraThread* m_cameraThread;
     qhttp::server::QHttpServer m_httpServer;
