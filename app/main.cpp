@@ -180,6 +180,8 @@ void catchUnixSignals(const std::vector<int>& quitSignals,
 int main(int argc, char *argv[])
 {
     qRegisterMetaType<hpis::CameraStatus>();
+    qRegisterMetaType<CameraPreview::Format>("CameraPreview::Format");
+
 /*
     OMXImageDecoder* decoder = new OMXImageDecoder();
     char           *sourceImage;

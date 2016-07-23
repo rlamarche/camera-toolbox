@@ -184,6 +184,8 @@ void CameraThread::doCapturePreview()
     CameraPreview* cameraPreview;
     if (m_camera->capturePreview(&cameraPreview))
     {
+        QByteArray bytes(cameraPreview->data(), cameraPreview->size());
+        emit previewAvailable(cameraPreview->format(), bytes);
         if (!m_decoderThread->decodePreview(cameraPreview))
         {
             delete cameraPreview;

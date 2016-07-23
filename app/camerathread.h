@@ -130,7 +130,7 @@ private:
     QString m_cameraPort;
 
 signals:
-    void previewAvailable(QPixmap preview);
+    void previewAvailable(CameraPreview::Format format, QByteArray bytes);
     void imageAvailable(QImage preview);
     void cameraStatusAvailable(hpis::CameraStatus cameraStatusAvailable);
 public slots:

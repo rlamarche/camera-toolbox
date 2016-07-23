@@ -9,6 +9,9 @@
 #include <qhttpserverrequest.hpp>
 #include <qhttpserverresponse.hpp>
 
+#include <QList>
+#include <QMutex>
+
 namespace hpis {
 
 class CameraServer : public QObject
@@ -29,9 +32,14 @@ protected:
 private:
     CameraThread* m_cameraThread;
     qhttp::server::QHttpServer m_httpServer;
+
+    QMutex m_LiveViewListMutex;
+    QList<qhttp::server::QHttpResponse*> m_liveViewList;
 signals:
 
 public slots:
+    void responseDestroyed(QObject* resp);
+    void previewAvailable(CameraPreview::Format format, QByteArray bytes);
 };
 
 }

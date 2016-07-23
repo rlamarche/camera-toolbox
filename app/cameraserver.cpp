@@ -5,6 +5,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <qhttpserverconnection.hpp>
 
 using namespace hpis;
 
@@ -17,6 +18,8 @@ CameraServer::CameraServer(CameraThread* cameraThread, QObject *parent) : m_came
     if ( !m_httpServer.isListening() ) {
         fprintf(stderr, "failed. can not listen at port 8080!\n");
     }
+
+    connect(cameraThread, SIGNAL(previewAvailable(CameraPreview::Format,QByteArray)), this, SLOT(previewAvailable(CameraPreview::Format,QByteArray)));
 }
 
 void CameraServer::ctrlSet(QMap<QString, QString> params)
@@ -117,9 +120,48 @@ void CameraServer::processRequest(qhttp::server::QHttpRequest* req, qhttp::serve
     {
         ctrlRec(params);
     }
+    else if (path == "/liveView")
+    {
+        m_LiveViewListMutex.lock();
+        m_liveViewList.append(res);
+        m_LiveViewListMutex.unlock();
+        connect(res, SIGNAL(destroyed(QObject*)), this, SLOT(responseDestroyed(QObject*)));
+        res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
+        res->addHeader("Content-type","multipart/x-mixed-replace; boundary=--jpgboundary");
+        return;
+    }
 
     res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
     res->addHeader("connection", "close");      // it's the default header, this line can be omitted.
     res->addHeader("Content-Type", "application/json");
     res->end(jsonResponse.toJson());
+}
+
+#include <QDebug>
+
+void CameraServer::responseDestroyed(QObject *resp)
+{
+    m_LiveViewListMutex.lock();
+    qInfo() << "Response destroyed";
+    if (m_liveViewList.removeOne((qhttp::server::QHttpResponse*) resp))
+    {
+        qInfo() << "Removed success";
+    }
+    m_LiveViewListMutex.unlock();
+}
+
+void CameraServer::previewAvailable(CameraPreview::Format format, QByteArray bytes)
+{
+    QMutexLocker locker(&m_LiveViewListMutex);
+
+    QList<qhttp::server::QHttpResponse*>::iterator i;
+    for (i = m_liveViewList.begin(); i != m_liveViewList.end(); ++i)
+    {
+        qhttp::server::QHttpResponse* resp = *i;
+        resp->write(QString("--jpgboundary").toLocal8Bit());
+        resp->write(QString("Content-Type: image/jpeg\r\n").toLocal8Bit());
+        resp->write(QString("Content-length: %1\r\n").arg(bytes.size()).toLocal8Bit());
+        resp->write(QString("\r\n").toLocal8Bit());
+        resp->write(bytes);
+    }
 }
