@@ -430,9 +430,9 @@ bool hpis::GPCamera::readCameraSettings()
 
     QString currentIsoAuto;
     gpGetRadioWidgetValue(isoAutoWidgetName(), currentIsoAuto);
-    if (currentIsoAuto == "1") {
+    if (currentIsoAuto == "On") {
         m_cameraIsoAuto = true;
-    } else if (currentIsoAuto == "0") {
+    } else if (currentIsoAuto == "Off") {
         m_cameraIsoAuto = false;
     }
 
@@ -711,11 +711,11 @@ QString hpis::GPCamera::apertureWidgetName()
 {
     if (m_viewfinder && m_captureMode == CaptureModeVideo)
     {
-        return "d1a9";
+        return "movief-number"; // d1a9
     }
     else
     {
-        return "5007";
+        return "f-number"; // 5007
     }
 }
 
@@ -725,12 +725,12 @@ QString hpis::GPCamera::shutterSpeedWidgetName()
     {
         if (m_captureMode == CaptureModePhoto)
         {
-            return "d100";
+            return "shutterspeed2"; // d100
         } else {
-            return "d1a8";
+            return "movieshutterspeed"; // d1a8
         }
     } else {
-        return "500d";
+        return "shutterspeed"; // 500d
     }
 }
 
@@ -738,15 +738,15 @@ QString hpis::GPCamera::isoWidgetName()
 {
     if (m_viewfinder && m_captureMode == CaptureModeVideo)
     {
-        return "d1aa";
+        return "movieiso"; // d1aa
     } else {
-        return "500f";
+        return "iso"; // 500f
     }
 }
 
 QString hpis::GPCamera::isoAutoWidgetName()
 {
-    return "d054";
+    return "autoiso"; // d054
 }
 
 
@@ -757,7 +757,7 @@ QString hpis::GPCamera::liveviewSelectorWidgetName()
 
 QString hpis::GPCamera::afModeWidgetName()
 {
-    return "d061";
+    return "liveviewaffocus"; // d061
 }
 
 QString hpis::GPCamera::lvZoomRatioWidgetName()
@@ -767,18 +767,17 @@ QString hpis::GPCamera::lvZoomRatioWidgetName()
 
 QString hpis::GPCamera::exposureModeWidgetName()
 {
-    // TODO
-    return "500e";
+    return "expprogram"; // 500e
 }
 
 QString hpis::GPCamera::afAreaWidgetName()
 {
-    return "changeafarea";
+    return "changeafarea"; // 9205
 }
 
 QString hpis::GPCamera::afAtWidgetName()
 {
-    return "d05d";
+    return "liveviewafmode"; // d05d
 }
 
 QString hpis::GPCamera::afDriveWidgetName()
@@ -812,18 +811,18 @@ QString hpis::GPCamera::exposureCompensationWidgetName()
     {
         return "d1ab";
     } else {
-        return "5010";
+        return "exposurecompensation"; // exposurecompensation2 // 5010
     }
 }
 
 QString hpis::GPCamera::programShiftValueWidgetName()
 {
-    return "d109";
+    return "flexibleprogram"; // d109
 }
 
 QString hpis::GPCamera::exposureIndicatorWidgetName()
 {
-    return "d1b1";
+    return "lightmeter"; // d1b1
 }
 
 hpis::Camera::CaptureMode hpis::GPCamera::captureMode()
@@ -871,11 +870,11 @@ bool hpis::GPCamera::setIsoAuto(bool isoAuto)
     int ret;
     if (isoAuto)
     {
-        ret = gpSetRadioWidget(isoAutoWidgetName(), QString("1"));
+        ret = gpSetRadioWidget(isoAutoWidgetName(), QString("On"));
     }
     else
     {
-        ret = gpSetRadioWidget(isoAutoWidgetName(), QString("0"));
+        ret = gpSetRadioWidget(isoAutoWidgetName(), QString("Off"));
     }
 
     if (ret == GP_OK)
@@ -1236,7 +1235,7 @@ bool hpis::GPCamera::changeAfArea(int x, int y)
     //applyCameraSettings();
     //refreshCameraSettings();
     gpSetToggleWidget(afDriveWidgetName(), 1);
-    gpSetToggleWidget(afDriveWidgetName(), 0);
+    //gpSetToggleWidget(afDriveWidgetName(), 0);
     //applyCameraSettings();
     return true;
 }
