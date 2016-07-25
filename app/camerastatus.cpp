@@ -53,6 +53,7 @@ QJsonObject CameraStatus::toJsonObject()
 {
     QJsonObject status;
 
+    status["exposureMode"] = m_exposureMode;
     status["captureMode"] = m_captureMode;
     status["isInLiveView"] = m_isInLiveView;
     status["isRecording"] = m_isRecording;

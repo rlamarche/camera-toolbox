@@ -13,6 +13,7 @@
 #include <QImage>
 #include <QMap>
 #include <QList>
+#include <QVariant>
 
 namespace hpis {
 
@@ -62,7 +63,9 @@ public:
         CommandStartMovie,
         CommandStopMovie,
 
-        CommandAfDrive
+        CommandAfDrive,
+
+        CommandSetProperty
     };
 
     class Command {
@@ -72,15 +75,19 @@ public:
         static Command changeAfArea(int x, int y);
         static Command setIso(QString value);
 
+        static Command setProperty(QString propertyName, QVariant value);
+
         CommandType type();
         int x();
         int y();
-        QString value();
+        QVariant value();
+        QString propertyName();
     private:
         CommandType m_commandType;
         int m_x;
         int m_y;
-        QString m_value;
+        QString m_propertyName;
+        QVariant m_value;
     };
 
     explicit CameraThread(hpis::Camera* camera, QObject *parent = 0);

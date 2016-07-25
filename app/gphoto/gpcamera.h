@@ -15,6 +15,7 @@ namespace hpis {
 class GPCamera : public Camera
 {
     Q_OBJECT
+
 public:
     enum RecordingMedia {
         RecordingMediaCard = 0,
@@ -36,83 +37,95 @@ public:
         StillCaptureModeQuiet
     };
 
-    enum ExposureMode {
-        ExposureModeP = 0,
-        ExposureModeA,
-        ExposureModeS,
-        ExposureModeM
-        // TODO add scene modes
-    };
-
 
     explicit GPCamera(QString cameraModel, QString cameraPort, QObject *parent = 0);
     ~GPCamera();
 
+    // Init / Shutdown / Read
     bool init();
     void shutdown();
-    bool capturePreview(CameraPreview** cameraPreview);
+    bool readCameraSettings();
+
+    // Capture photo
     bool capturePhoto();
+
+    // Capture video
     bool startRecordMovie();
     bool stopRecordMovie();
     bool isRecording();
-    bool readCameraSettings();
 
+    // Focus
     bool afDrive();
+    bool changeAfArea(int x, int y);
 
+    // Live view
+    bool capturePreview(CameraPreview** cameraPreview);
     bool startLiveView();
     bool stopLiveView();
     bool isInLiveView();
 
+    // Capture mode
     bool setCaptureMode(CaptureMode captureMode);
     CaptureMode captureMode();
 
-    //bool setExposureMode(ExposureMode exposureMode);
-    //ExposureMode exposureMode();
-
-    QString aperture();
-    QString shutterSpeed();
-    QString iso();
-    bool isoAuto();
-    bool setIsoAuto(bool isoAuto);
-    QString exposureMode();
-    QString lvZoomRatio();
-
+    // Recording media
     bool setRecordingMedia(RecordingMedia recordingMedia);
     QString recordingMedia();
 
+    // Capture target
     bool setCaptureTarget(CaptureTarget captureTarget);
     QString captureTarget();
 
+    // Still capture mode
     bool setStillCaptureMode(StillCaptureMode stillCaptureMode);
     QString stillCaptureMode();
 
+    // Exposure preview
     bool setExposurePreview(bool exposurePreview);
     bool exposurePreview();
 
+    // Aperture
+    QString aperture();
+    bool setAperture(QString aperture);
     bool increaseAperture();
     bool decreaseAperture();
 
+    // Shutter speed
+    bool setShutterSpeed(QString shutterSpeed());
+    QString shutterSpeed();
     bool increaseShutterSpeed();
     bool decreaseShutterSpeed();
 
+    // ISO Auto
+    bool isoAuto();
+    bool setIsoAuto(bool isoAuto);
+
+    // ISO
+    QString iso();
     bool setIso(QString iso);
     bool increaseIso();
     bool decreaseIso();
 
+    // Exposure mode
+    QString exposureMode();
+    bool setExposureMode(QString exposureMode);
     bool exposureModePlus();
     bool exposureModeMinus();
 
+    // Live view zoom ratio
+    QString lvZoomRatio();
     bool increaseLvZoomRatio();
     bool decreaseLvZoomRatio();
 
-    bool changeAfArea(int x, int y);
 
+    // Program shift value
     bool setProgramShiftValue(int value);
     int programShiftValue();
     int programShiftValueMin();
     int programShiftValueMax();
     int programShiftValueStep();
 
+    // Exposure compensation
     bool setExposureCompensation(QString value);
     QString exposureCompensation();
     bool increaseExposureCompensation();
@@ -182,9 +195,6 @@ private:
     ::GPPortInfoList*         m_portInfoList;
     ::Camera*                 m_camera;
     ::CameraWidget*           m_cameraWindow;
-
-    // Camera state
-    bool m_configChanged;
 
     // Camera infos
     CameraAbilities m_cameraAbilities;

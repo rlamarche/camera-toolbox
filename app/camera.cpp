@@ -11,6 +11,7 @@ Camera::Camera(QObject *parent) : QObject(parent)
 CameraStatus hpis::Camera::status()
 {
     CameraStatus cs;
+    cs.m_exposureMode = exposureMode();
     cs.m_captureMode = captureMode();
     cs.m_isInLiveView = isInLiveView();
     cs.m_isRecording = isRecording();

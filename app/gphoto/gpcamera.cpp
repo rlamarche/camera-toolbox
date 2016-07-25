@@ -7,7 +7,6 @@ using namespace hpis;
 
 GPCamera::GPCamera(QString cameraModel, QString cameraPort, QObject *parent) : Camera(parent), m_camera(0), m_cameraModel(cameraModel), m_cameraPort(cameraPort)
 {
-    m_configChanged = false;
     // Create gphoto context
     m_context = gp_context_new();
 
@@ -1066,6 +1065,25 @@ bool GPCamera::setCaptureMode(CaptureMode captureMode)
     }
 }
 
+bool GPCamera::setAperture(QString aperture)
+{
+    qInfo() << "Received aperture" << aperture;
+    int i = m_cameraApertures.indexOf(aperture);
+    if (i == -1)
+    {
+        return false;
+    }
+
+    int ret = gpSetRadioWidget(apertureWidgetName(), m_cameraApertures[i]);
+    if (ret == GP_OK)
+    {
+        m_cameraAperture = i;
+        return true;
+    } else {
+        return false;
+    }
+}
+
 bool GPCamera::increaseAperture()
 {
     if (m_cameraAperture < m_cameraApertures.length() - 1)
@@ -1100,6 +1118,8 @@ bool GPCamera::decreaseAperture()
         return false;
     }
 }
+
+
 
 bool GPCamera::increaseShutterSpeed()
 {
@@ -1187,6 +1207,23 @@ bool GPCamera::decreaseIso()
     }
 }
 
+bool GPCamera::setExposureMode(QString exposureMode)
+{
+    int i = m_exposureModes.indexOf(exposureMode);
+    if (i == -1)
+    {
+        return false;
+    }
+
+    int ret = gpSetRadioWidget(exposureModeWidgetName(), m_exposureModes[i]);
+    if (ret == GP_OK)
+    {
+        m_exposureMode = i;
+        return true;
+    } else {
+        return false;
+    }
+}
 
 bool GPCamera::exposureModePlus()
 {

@@ -19,6 +19,7 @@ public:
     bool isInLiveView();
     bool isRecording();
 
+    QString exposureMode();
     QString aperture();
     QString shutterSpeed();
     QString iso();
@@ -31,6 +32,7 @@ private:
     bool m_isInLiveView;
     bool m_isRecording;
 
+    QString m_exposureMode;
     QString m_aperture;
     QString m_shutterSpeed;
     QString m_iso;

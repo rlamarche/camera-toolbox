@@ -12,6 +12,9 @@
 #include <QList>
 #include <QMutex>
 
+#define HPIS_SRV_CTRL_ISO "iso"
+#define HPIS_SRV_CTRL_ISO_AUTO "Auto"
+
 namespace hpis {
 
 class CameraServer : public QObject
@@ -25,16 +28,21 @@ protected:
     void processRequest(qhttp::server::QHttpRequest* req, qhttp::server::QHttpResponse* res);
 
     void ctrlSet(QMap<QString, QString> params);
+    QJsonDocument ctrlGet(QMap<QString, QString> params);
     QJsonDocument ctrlMode(QMap<QString, QString> params);
     void ctrlRec(QMap<QString, QString> params);
     void ctrlShutdown();
 
 private:
+    static QStringList ctrls;
+
     CameraThread* m_cameraThread;
     qhttp::server::QHttpServer m_httpServer;
 
     QMutex m_LiveViewListMutex;
     QList<qhttp::server::QHttpResponse*> m_liveViewList;
+    QMutex m_previewListMutex;
+    QList<qhttp::server::QHttpResponse*> m_previewList;
 signals:
 
 public slots:

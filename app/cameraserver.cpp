@@ -9,6 +9,8 @@
 
 using namespace hpis;
 
+QStringList CameraServer::ctrls = QStringList() << HPIS_SRV_CTRL_ISO;
+
 CameraServer::CameraServer(CameraThread* cameraThread, QObject *parent) : m_cameraThread(cameraThread), m_httpServer(this), QObject(parent)
 {
     m_httpServer.listen(QHostAddress::Any, 8080, [this](qhttp::server::QHttpRequest* req, qhttp::server::QHttpResponse* res) {
@@ -26,19 +28,32 @@ void CameraServer::ctrlSet(QMap<QString, QString> params)
 {
     QString value;
 
-    if (params.contains("iso"))
+    if (params.contains(HPIS_SRV_CTRL_ISO))
     {
-        value = params["iso"];
-        if (value == "Auto")
+        value = params[HPIS_SRV_CTRL_ISO];
+        if (value == HPIS_SRV_CTRL_ISO_AUTO)
         {
             m_cameraThread->executeCommand(CameraThread::CommandEnableIsoAuto);
         }
         else
         {
             m_cameraThread->executeCommand(CameraThread::CommandDisableIsoAuto);
-            m_cameraThread->executeCommand(CameraThread::Command::setIso(value));
+            m_cameraThread->executeCommand(CameraThread::Command::setProperty(HPIS_SRV_CTRL_ISO, QVariant(value)));
+//            m_cameraThread->executeCommand(CameraThread::Command::setIso(value));
         }
     }
+    if (params.contains("aperture"))
+    {
+        value = params["aperture"];
+        m_cameraThread->executeCommand(CameraThread::Command::setProperty("aperture", QVariant(value)));
+    }
+}
+
+QJsonDocument CameraServer::ctrlGet(QMap<QString, QString> params)
+{
+    CameraStatus cameraStatus = m_cameraThread->cameraStatus();
+    QString value = params["k"];
+
 }
 
 QJsonDocument CameraServer::ctrlMode(QMap<QString, QString> params)
@@ -108,6 +123,10 @@ void CameraServer::processRequest(qhttp::server::QHttpRequest* req, qhttp::serve
     {
         ctrlSet(params);
     }
+    else if (path == "/ctrl/get")
+    {
+        jsonResponse = ctrlGet(params);
+    }
     else if (path == "/ctrl/mode")
     {
         jsonResponse = ctrlMode(params);
@@ -120,7 +139,11 @@ void CameraServer::processRequest(qhttp::server::QHttpRequest* req, qhttp::serve
     {
         ctrlRec(params);
     }
-    else if (path == "/liveView")
+    else if (path == "/ctrl/focus")
+    {
+        m_cameraThread->executeCommand(CameraThread::CommandAfDrive);
+    }
+    else if (path == "/liveView.mjpg")
     {
         m_LiveViewListMutex.lock();
         m_liveViewList.append(res);
@@ -128,9 +151,20 @@ void CameraServer::processRequest(qhttp::server::QHttpRequest* req, qhttp::serve
         connect(res, SIGNAL(destroyed(QObject*)), this, SLOT(responseDestroyed(QObject*)));
         res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
         res->addHeader("Content-type","multipart/x-mixed-replace; boundary=--jpgboundary");
+        res->addHeader("Cache-Control", "no-cache, must revalidate");
         return;
     }
-
+    else if (path == "/preview.jpg")
+    {
+        m_previewListMutex.lock();
+        m_previewList.append(res);
+        m_previewListMutex.unlock();
+        connect(res, SIGNAL(destroyed(QObject*)), this, SLOT(responseDestroyed(QObject*)));
+        res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
+        res->addHeader("Content-type","image/jpeg");
+        res->addHeader("Cache-Control", "no-cache, must revalidate");
+        return;
+    }
     res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
     res->addHeader("connection", "close");      // it's the default header, this line can be omitted.
     res->addHeader("Content-Type", "application/json");
@@ -153,6 +187,7 @@ void CameraServer::responseDestroyed(QObject *resp)
 void CameraServer::previewAvailable(CameraPreview::Format format, QByteArray bytes)
 {
     QMutexLocker locker(&m_LiveViewListMutex);
+    QMutexLocker locker2(&m_previewListMutex);
 
     QList<qhttp::server::QHttpResponse*>::iterator i;
     for (i = m_liveViewList.begin(); i != m_liveViewList.end(); ++i)
@@ -164,4 +199,12 @@ void CameraServer::previewAvailable(CameraPreview::Format format, QByteArray byt
         resp->write(QString("\r\n").toLocal8Bit());
         resp->write(bytes);
     }
+
+    for (i = m_previewList.begin(); i != m_previewList.end(); ++i)
+    {
+        qhttp::server::QHttpResponse* resp = *i;
+        resp->end(bytes);
+    }
+    m_previewList.clear();
+
 }

@@ -40,7 +40,12 @@ int CameraThread::Command::y()
     return m_y;
 }
 
-QString CameraThread::Command::value()
+QString CameraThread::Command::propertyName()
+{
+    return m_propertyName;
+}
+
+QVariant CameraThread::Command::value()
 {
     return m_value;
 }
@@ -62,6 +67,15 @@ CameraThread::Command CameraThread::Command::changeAfArea(int x, int y)
 CameraThread::Command CameraThread::Command::setIso(QString value)
 {
     Command command(CameraThread::CommandSetIso);
+    command.m_value = value;
+
+    return command;
+}
+
+CameraThread::Command CameraThread::Command::setProperty(QString propertyName, QVariant value)
+{
+    Command command(CameraThread::CommandSetProperty);
+    command.m_propertyName = propertyName;
     command.m_value = value;
 
     return command;
@@ -270,7 +284,7 @@ CameraStatus CameraThread::doCommand(Command command) const
         break;
 
     case CommandSetIso:
-        success = m_camera->setIso(command.value());
+        success = m_camera->setIso(command.value().toString());
         break;
     case CommandIncreaseIso:
         success = m_camera->increaseIso();
@@ -367,7 +381,16 @@ CameraStatus CameraThread::doCommand(Command command) const
         success = m_camera->afDrive();
         break;
 
+    case CommandSetProperty:
+        qInfo() << "Set property" << command.propertyName().toStdString().c_str() << "to" << command.value();
+        success = m_camera->setProperty(command.propertyName().toStdString().c_str(), command.value());
+        break;
     default: break;
+    }
+
+    if (!success)
+    {
+        qInfo() << "Command failed";
     }
 
     return m_camera->status();
