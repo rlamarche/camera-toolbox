@@ -16,7 +16,9 @@ class Camera : public QObject
 
     Q_PROPERTY(QString exposureMode READ exposureMode WRITE setExposureMode)
     Q_PROPERTY(QString aperture READ aperture WRITE setAperture)
+    Q_PROPERTY(QString shutterSpeed READ shutterSpeed WRITE setShutterSpeed)
     Q_PROPERTY(QString iso READ iso WRITE setIso)
+    Q_PROPERTY(bool isoAuto READ isoAuto WRITE setIsoAuto)
 public:
     enum CaptureMode {
         CaptureModePhoto,
@@ -55,12 +57,14 @@ public:
 
 
     // Aperture
+    virtual QList<QString> apertures() = 0;
     virtual bool setAperture(QString aperture) = 0;
     virtual QString aperture() = 0;
     virtual bool increaseAperture() = 0;
     virtual bool decreaseAperture() = 0;
 
     // Shutter speed
+    virtual QList<QString> shutterSpeeds() = 0;
     virtual QString shutterSpeed() = 0;
     virtual bool setShutterSpeed(QString shutterSpeed) = 0;
     virtual bool increaseShutterSpeed() = 0;
@@ -71,12 +75,14 @@ public:
     virtual bool setIsoAuto(bool isoAuto) = 0;
 
     // ISO
+    virtual QList<QString> isos() = 0;
     virtual QString iso() = 0;
     virtual bool setIso(QString iso) = 0;
     virtual bool increaseIso() = 0;
     virtual bool decreaseIso() = 0;
 
     // Exposure mode
+    virtual QList<QString> exposureModes() = 0;
     virtual QString exposureMode() = 0;
     virtual bool setExposureMode(QString exposureMode) = 0;
     virtual bool exposureModePlus() = 0;

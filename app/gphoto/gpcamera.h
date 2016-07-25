@@ -85,13 +85,15 @@ public:
     bool exposurePreview();
 
     // Aperture
+    QList<QString> apertures();
     QString aperture();
     bool setAperture(QString aperture);
     bool increaseAperture();
     bool decreaseAperture();
 
     // Shutter speed
-    bool setShutterSpeed(QString shutterSpeed());
+    QList<QString> shutterSpeeds();
+    bool setShutterSpeed(QString shutterSpeed);
     QString shutterSpeed();
     bool increaseShutterSpeed();
     bool decreaseShutterSpeed();
@@ -101,12 +103,14 @@ public:
     bool setIsoAuto(bool isoAuto);
 
     // ISO
+    QList<QString> isos();
     QString iso();
     bool setIso(QString iso);
     bool increaseIso();
     bool decreaseIso();
 
     // Exposure mode
+    QList<QString> exposureModes();
     QString exposureMode();
     bool setExposureMode(QString exposureMode);
     bool exposureModePlus();

@@ -47,6 +47,11 @@ void CameraServer::ctrlSet(QMap<QString, QString> params)
         value = params["aperture"];
         m_cameraThread->executeCommand(CameraThread::Command::setProperty("aperture", QVariant(value)));
     }
+    if (params.contains("shutterSpeed"))
+    {
+        value = params["shutterSpeed"];
+        m_cameraThread->executeCommand(CameraThread::Command::setProperty("shutterSpeed", QVariant(value)));
+    }
 }
 
 QJsonDocument CameraServer::ctrlGet(QMap<QString, QString> params)
@@ -186,6 +191,7 @@ void CameraServer::responseDestroyed(QObject *resp)
 
 void CameraServer::previewAvailable(CameraPreview::Format format, QByteArray bytes)
 {
+    // TODO use format
     QMutexLocker locker(&m_LiveViewListMutex);
     QMutexLocker locker2(&m_previewListMutex);
 

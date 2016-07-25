@@ -33,6 +33,8 @@ void GPCamera::reportError(QString error)
     qWarning() << "Error :" << error;
 }
 
+
+// Camera Init
 bool GPCamera::init()
 {
     int ret;
@@ -101,11 +103,15 @@ bool GPCamera::init()
     return true;
 }
 
+
+// Camera shutdown
 void GPCamera::shutdown()
 {
     gp_camera_free(m_camera);
 }
 
+
+// Capture preview
 bool GPCamera::capturePreview(CameraPreview** cameraPreview)
 {
     CameraFile *file;
@@ -128,6 +134,8 @@ bool GPCamera::capturePreview(CameraPreview** cameraPreview)
 
     return true;
 }
+
+///////////////////////////////////////// Camera control
 
 bool GPCamera::startRecordMovie()
 {
@@ -163,7 +171,7 @@ bool GPCamera::isRecording()
 
 bool GPCamera::capturePhoto()
 {
-    CameraFilePath camera_file_path;
+    //CameraFilePath camera_file_path;
     CameraEventType	evtype;
     void* data;
 
@@ -248,6 +256,8 @@ bool GPCamera::capturePhoto()
     return true;
 }
 
+/////////////////////////////////// Camera live view
+
 bool GPCamera::startLiveView()
 {
     int ret = gpSetToggleWidget(viewfinderWidgetName(), 1);
@@ -277,82 +287,6 @@ bool GPCamera::stopLiveView()
 bool GPCamera::isInLiveView()
 {
     return m_isInLiveView;
-}
-
-QString GPCamera::errorCodeToString(int errorCode)
-{
-    switch (errorCode) {
-    case GP_OK:
-        return QObject::tr("No error");
-    case GP_ERROR:
-        return QObject::tr("Unspecified error");
-    case GP_ERROR_IO:
-        return QObject::tr("I/O problem");
-    case GP_ERROR_BAD_PARAMETERS:
-        return QObject::tr("Bad parameters");
-    case GP_ERROR_NOT_SUPPORTED:
-        return QObject::tr("Unsupported operation");
-    case  GP_ERROR_FIXED_LIMIT_EXCEEDED:
-        return QObject::tr("Fixed limit exceeded");
-    case GP_ERROR_TIMEOUT:
-        return QObject::tr("Timeout reading from or writing to the port");
-    case GP_ERROR_IO_SUPPORTED_SERIAL:
-        return QObject::tr("Serial port not supported");
-    case GP_ERROR_IO_SUPPORTED_USB:
-        return QObject::tr("USB port not supported");
-    case GP_ERROR_UNKNOWN_PORT:
-        return QObject::tr("Unknown port");
-    case GP_ERROR_NO_MEMORY:
-        return QObject::tr("Out of memory");
-    case GP_ERROR_LIBRARY:
-        return QObject::tr("Error loading a library");
-    case GP_ERROR_IO_INIT:
-        return QObject::tr("Error initializing the port");
-    case GP_ERROR_IO_READ:
-        return QObject::tr("Error reading from the port");
-    case GP_ERROR_IO_WRITE:
-        return QObject::tr("Error writing to the port");
-    case GP_ERROR_IO_UPDATE:
-        return QObject::tr("Error updating the port settings");
-    case GP_ERROR_IO_SERIAL_SPEED:
-        return QObject::tr("Error setting the serial port speed");
-    case GP_ERROR_IO_USB_CLEAR_HALT:
-        return QObject::tr("Error clearing a halt condition on the USB port");
-    case GP_ERROR_IO_USB_FIND:
-        return QObject::tr("Could not find the requested device on the USB port");
-    case GP_ERROR_IO_USB_CLAIM:
-        return QObject::tr("Could not claim the USB device");
-    case GP_ERROR_IO_LOCK:
-        return QObject::tr("Could not lock the device");
-    case GP_ERROR_HAL:
-        return QObject::tr("libhal error");
-    case GP_ERROR_CORRUPTED_DATA:
-        return QObject::tr("Corrupted data received");
-    case GP_ERROR_FILE_EXISTS:
-        return QObject::tr("File already exists");
-    case GP_ERROR_MODEL_NOT_FOUND:
-        return QObject::tr("Specified camera model was not found");
-    case GP_ERROR_DIRECTORY_NOT_FOUND:
-        return QObject::tr("Specified directory was not found")        ;
-    case GP_ERROR_FILE_NOT_FOUND:
-        return QObject::tr("Specified directory was not found");
-    case GP_ERROR_DIRECTORY_EXISTS:
-        return QObject::tr("Specified directory already exists");
-    case GP_ERROR_CAMERA_BUSY:
-        return QObject::tr("The camera is already busy");
-    case GP_ERROR_PATH_NOT_ABSOLUTE:
-        return QObject::tr("Path is not absolute");
-    case GP_ERROR_CANCEL:
-        return QObject::tr("Cancellation successful");
-    case GP_ERROR_CAMERA_ERROR:
-        return QObject::tr("Unspecified camera error");
-    case GP_ERROR_OS_FAILURE:
-        return QObject::tr("Unspecified failure of the operating system");
-    case GP_ERROR_NO_SPACE:
-        return QObject::tr("Not enough space");
-    default:
-        return QObject::tr("Unknown error: %1").arg(QString().sprintf("%d", errorCode));
-    }
 }
 
 bool GPCamera::readCameraSettings()
@@ -525,6 +459,8 @@ bool GPCamera::readCameraSettings()
     return true;
 }
 
+////////////////////////////////// GPhoto
+
 int GPCamera::gpGetRangeWidgetInfo(QString widgetName, float* min, float* max, float* increment)
 {
     int ret;
@@ -579,10 +515,6 @@ bool GPCamera::extractWidgetChoices(QString widgetName, QList<QString>& choices)
 
     return true;
 }
-
-
-
-
 
 int GPCamera::gpSetToggleWidget(QString widgetName, int toggleValue)
 {
@@ -742,6 +674,8 @@ int GPCamera::gpGetRangeWidgetValue(QString widgetName, float* value)
     return GP_OK;
 }
 
+///////////////////////////////////////////// Widget names
+
 QString GPCamera::viewfinderWidgetName()
 {
     return "viewfinder";
@@ -827,12 +761,12 @@ QString GPCamera::afAtWidgetName()
 
 QString GPCamera::afDriveWidgetName()
 {
-    return "autofocusdrive";
+    return "autofocusdrive"; // 90c1
 }
 
 QString GPCamera::recordingMediaWidgetName()
 {
-    return "recordingmedia";
+    return "recordingmedia"; // d10b
 }
 
 QString GPCamera::captureTargetWidgetName()
@@ -870,40 +804,15 @@ QString GPCamera::exposureIndicatorWidgetName()
     return "lightmeter"; // d1b1
 }
 
+////////////////////////////////////// Camera control
+
 hpis::Camera::CaptureMode GPCamera::captureMode()
 {
     return m_captureMode;
 }
 
-QString GPCamera::aperture()
-{
-    if (m_cameraAperture > -1 && m_cameraAperture < m_cameraApertures.size())
-    {
-        return m_cameraApertures[m_cameraAperture];
-    } else {
-        return QString::null;
-    }
-}
 
-QString GPCamera::shutterSpeed()
-{
-    if (m_cameraShutterSpeed > -1 && m_cameraShutterSpeed < m_cameraShutterSpeeds.size())
-    {
-        return m_cameraShutterSpeeds[m_cameraShutterSpeed];
-    } else {
-        return QString::null;
-    }
-}
-
-QString GPCamera::iso()
-{
-    if (m_cameraIso > -1 && m_cameraIso < m_cameraIsos.size())
-    {
-        return m_cameraIsos[m_cameraIso];
-    } else {
-        return QString::null;
-    }
-}
+// ISO Auto
 
 bool GPCamera::isoAuto()
 {
@@ -931,25 +840,7 @@ bool GPCamera::setIsoAuto(bool isoAuto)
     }
 }
 
-QString GPCamera::exposureMode()
-{
-    if (m_exposureMode > -1 && m_exposureMode < m_exposureModes.size())
-    {
-        return m_exposureModes[m_exposureMode];
-    } else {
-        return QString::null;
-    }
-}
-
-QString GPCamera::lvZoomRatio()
-{
-    if (m_lvZoomRatio > -1 && m_lvZoomRatio < m_lvZoomRatios.size())
-    {
-        return m_lvZoomRatios[m_lvZoomRatio];
-    } else {
-        return QString::null;
-    }
-}
+// Recording media
 
 bool GPCamera::setRecordingMedia(RecordingMedia recordingMedia)
 {
@@ -973,6 +864,8 @@ QString GPCamera::recordingMedia()
     }
 }
 
+// Capture target
+
 bool GPCamera::setCaptureTarget(CaptureTarget captureTarget)
 {
     return gpSetRadioWidget(captureTargetWidgetName(), m_captureTargets[captureTarget]);
@@ -987,6 +880,8 @@ QString GPCamera::captureTarget()
         return QString::null;
     }
 }
+
+// Still capture mode
 
 bool GPCamera::setStillCaptureMode(StillCaptureMode stillCaptureMode)
 {
@@ -1009,6 +904,8 @@ QString GPCamera::stillCaptureMode()
         return QString::null;
     }
 }
+
+// Exposure preview
 
 bool GPCamera::setExposurePreview(bool exposurePreview)
 {
@@ -1033,6 +930,8 @@ bool GPCamera::exposurePreview()
 {
     return m_exposurePreview;
 }
+
+// Capture mode
 
 bool GPCamera::setCaptureMode(CaptureMode captureMode)
 {
@@ -1062,6 +961,23 @@ bool GPCamera::setCaptureMode(CaptureMode captureMode)
         return true;
     } else {
         return false;
+    }
+}
+
+// Aperture
+
+QList<QString> GPCamera::apertures()
+{
+    return m_cameraApertures;
+}
+
+QString GPCamera::aperture()
+{
+    if (m_cameraAperture > -1 && m_cameraAperture < m_cameraApertures.size())
+    {
+        return m_cameraApertures[m_cameraAperture];
+    } else {
+        return QString::null;
     }
 }
 
@@ -1119,7 +1035,40 @@ bool GPCamera::decreaseAperture()
     }
 }
 
+// Shutter speed
 
+QList<QString> GPCamera::shutterSpeeds()
+{
+    return m_cameraShutterSpeeds;
+}
+
+QString GPCamera::shutterSpeed()
+{
+    if (m_cameraShutterSpeed > -1 && m_cameraShutterSpeed < m_cameraShutterSpeeds.size())
+    {
+        return m_cameraShutterSpeeds[m_cameraShutterSpeed];
+    } else {
+        return QString::null;
+    }
+}
+
+bool GPCamera::setShutterSpeed(QString shutterSpeed)
+{
+    int i = m_cameraShutterSpeeds.indexOf(shutterSpeed);
+    if (i == -1)
+    {
+        return false;
+    }
+
+    int ret = gpSetRadioWidget(shutterSpeedWidgetName(), m_cameraShutterSpeeds[i]);
+    if (ret == GP_OK)
+    {
+        m_cameraShutterSpeed = i;
+        return true;
+    } else {
+        return false;
+    }
+}
 
 bool GPCamera::increaseShutterSpeed()
 {
@@ -1152,6 +1101,23 @@ bool GPCamera::decreaseShutterSpeed()
         }
     } else {
         return false;
+    }
+}
+
+// ISO
+
+QList<QString> GPCamera::isos()
+{
+    return m_cameraIsos;
+}
+
+QString GPCamera::iso()
+{
+    if (m_cameraIso > -1 && m_cameraIso < m_cameraIsos.size())
+    {
+        return m_cameraIsos[m_cameraIso];
+    } else {
+        return QString::null;
     }
 }
 
@@ -1204,6 +1170,23 @@ bool GPCamera::decreaseIso()
         }
     } else {
         return false;
+    }
+}
+
+// Exposure mode
+
+QList<QString> GPCamera::exposureModes()
+{
+    return m_exposureModes;
+}
+
+QString GPCamera::exposureMode()
+{
+    if (m_exposureMode > -1 && m_exposureMode < m_exposureModes.size())
+    {
+        return m_exposureModes[m_exposureMode];
+    } else {
+        return QString::null;
     }
 }
 
@@ -1261,7 +1244,17 @@ bool GPCamera::exposureModeMinus()
     }
 }
 
+// Live view zoom ratio
 
+QString GPCamera::lvZoomRatio()
+{
+    if (m_lvZoomRatio > -1 && m_lvZoomRatio < m_lvZoomRatios.size())
+    {
+        return m_lvZoomRatios[m_lvZoomRatio];
+    } else {
+        return QString::null;
+    }
+}
 
 bool GPCamera::increaseLvZoomRatio()
 {
@@ -1297,6 +1290,8 @@ bool GPCamera::decreaseLvZoomRatio()
     }
 }
 
+// Focus
+
 bool GPCamera::afDrive()
 {
     int ret = gpSetToggleWidget(afDriveWidgetName(), 1);
@@ -1329,6 +1324,8 @@ bool GPCamera::changeAfArea(int x, int y)
     //refreshCameraSettings();
     return afDrive();
 }
+
+// Program shift value
 
 int GPCamera::programShiftValue()
 {
@@ -1364,8 +1361,7 @@ int GPCamera::programShiftValueStep()
     return m_programShiftValueStep;
 }
 
-
-
+// Exposure compensation
 
 QString GPCamera::exposureCompensation()
 {
@@ -1426,5 +1422,83 @@ bool GPCamera::decreaseExposureCompensation()
         }
     } else {
         return false;
+    }
+}
+
+// GPhoto
+
+QString GPCamera::errorCodeToString(int errorCode)
+{
+    switch (errorCode) {
+    case GP_OK:
+        return QObject::tr("No error");
+    case GP_ERROR:
+        return QObject::tr("Unspecified error");
+    case GP_ERROR_IO:
+        return QObject::tr("I/O problem");
+    case GP_ERROR_BAD_PARAMETERS:
+        return QObject::tr("Bad parameters");
+    case GP_ERROR_NOT_SUPPORTED:
+        return QObject::tr("Unsupported operation");
+    case  GP_ERROR_FIXED_LIMIT_EXCEEDED:
+        return QObject::tr("Fixed limit exceeded");
+    case GP_ERROR_TIMEOUT:
+        return QObject::tr("Timeout reading from or writing to the port");
+    case GP_ERROR_IO_SUPPORTED_SERIAL:
+        return QObject::tr("Serial port not supported");
+    case GP_ERROR_IO_SUPPORTED_USB:
+        return QObject::tr("USB port not supported");
+    case GP_ERROR_UNKNOWN_PORT:
+        return QObject::tr("Unknown port");
+    case GP_ERROR_NO_MEMORY:
+        return QObject::tr("Out of memory");
+    case GP_ERROR_LIBRARY:
+        return QObject::tr("Error loading a library");
+    case GP_ERROR_IO_INIT:
+        return QObject::tr("Error initializing the port");
+    case GP_ERROR_IO_READ:
+        return QObject::tr("Error reading from the port");
+    case GP_ERROR_IO_WRITE:
+        return QObject::tr("Error writing to the port");
+    case GP_ERROR_IO_UPDATE:
+        return QObject::tr("Error updating the port settings");
+    case GP_ERROR_IO_SERIAL_SPEED:
+        return QObject::tr("Error setting the serial port speed");
+    case GP_ERROR_IO_USB_CLEAR_HALT:
+        return QObject::tr("Error clearing a halt condition on the USB port");
+    case GP_ERROR_IO_USB_FIND:
+        return QObject::tr("Could not find the requested device on the USB port");
+    case GP_ERROR_IO_USB_CLAIM:
+        return QObject::tr("Could not claim the USB device");
+    case GP_ERROR_IO_LOCK:
+        return QObject::tr("Could not lock the device");
+    case GP_ERROR_HAL:
+        return QObject::tr("libhal error");
+    case GP_ERROR_CORRUPTED_DATA:
+        return QObject::tr("Corrupted data received");
+    case GP_ERROR_FILE_EXISTS:
+        return QObject::tr("File already exists");
+    case GP_ERROR_MODEL_NOT_FOUND:
+        return QObject::tr("Specified camera model was not found");
+    case GP_ERROR_DIRECTORY_NOT_FOUND:
+        return QObject::tr("Specified directory was not found")        ;
+    case GP_ERROR_FILE_NOT_FOUND:
+        return QObject::tr("Specified directory was not found");
+    case GP_ERROR_DIRECTORY_EXISTS:
+        return QObject::tr("Specified directory already exists");
+    case GP_ERROR_CAMERA_BUSY:
+        return QObject::tr("The camera is already busy");
+    case GP_ERROR_PATH_NOT_ABSOLUTE:
+        return QObject::tr("Path is not absolute");
+    case GP_ERROR_CANCEL:
+        return QObject::tr("Cancellation successful");
+    case GP_ERROR_CAMERA_ERROR:
+        return QObject::tr("Unspecified camera error");
+    case GP_ERROR_OS_FAILURE:
+        return QObject::tr("Unspecified failure of the operating system");
+    case GP_ERROR_NO_SPACE:
+        return QObject::tr("Not enough space");
+    default:
+        return QObject::tr("Unknown error: %1").arg(QString().sprintf("%d", errorCode));
     }
 }
