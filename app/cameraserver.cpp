@@ -9,8 +9,6 @@
 
 using namespace hpis;
 
-QStringList CameraServer::ctrls = QStringList() << HPIS_SRV_CTRL_ISO;
-
 CameraServer::CameraServer(CameraThread* cameraThread, QObject *parent) : m_cameraThread(cameraThread), m_httpServer(this), QObject(parent)
 {
     m_httpServer.listen(QHostAddress::Any, 8080, [this](qhttp::server::QHttpRequest* req, qhttp::server::QHttpResponse* res) {
@@ -28,18 +26,17 @@ void CameraServer::ctrlSet(QMap<QString, QString> params)
 {
     QString value;
 
-    if (params.contains(HPIS_SRV_CTRL_ISO))
+    if (params.contains("iso"))
     {
-        value = params[HPIS_SRV_CTRL_ISO];
-        if (value == HPIS_SRV_CTRL_ISO_AUTO)
+        value = params["iso"];
+        if (value == "Auto")
         {
             m_cameraThread->executeCommand(CameraThread::CommandEnableIsoAuto);
         }
         else
         {
             m_cameraThread->executeCommand(CameraThread::CommandDisableIsoAuto);
-            m_cameraThread->executeCommand(CameraThread::Command::setProperty(HPIS_SRV_CTRL_ISO, QVariant(value)));
-//            m_cameraThread->executeCommand(CameraThread::Command::setIso(value));
+            m_cameraThread->executeCommand(CameraThread::Command::setProperty("iso", QVariant(value)));
         }
     }
     if (params.contains("aperture"))
@@ -52,13 +49,49 @@ void CameraServer::ctrlSet(QMap<QString, QString> params)
         value = params["shutterSpeed"];
         m_cameraThread->executeCommand(CameraThread::Command::setProperty("shutterSpeed", QVariant(value)));
     }
+    if (params.contains("exposureMode"))
+    {
+        value = params["exposureMode"];
+        m_cameraThread->executeCommand(CameraThread::Command::setProperty("exposureMode", QVariant(value)));
+    }
 }
 
 QJsonDocument CameraServer::ctrlGet(QMap<QString, QString> params)
 {
     CameraStatus cameraStatus = m_cameraThread->cameraStatus();
     QString value = params["k"];
+    QJsonObject response;
 
+    response["key"] = value;
+
+    // {"code":0,"desc":"string","key":"focus","type":1,"ro":1,"value":"MF","opts":["MF","AF"]}
+
+    if (value == "iso")
+    {
+        response["value"] = cameraStatus.iso();
+        response["opts"] = QJsonArray::fromStringList(cameraStatus.isos());
+    }
+    else if (value == "aperture")
+    {
+        response["value"] = cameraStatus.aperture();
+        response["opts"] = QJsonArray::fromStringList(cameraStatus.apertures());
+    }
+    else if (value == "shutterSpeed")
+    {
+        response["value"] = cameraStatus.shutterSpeed();
+        response["opts"] = QJsonArray::fromStringList(cameraStatus.shutterSpeeds());
+    }
+    else if (value == "exposureMode")
+    {
+        response["value"] = cameraStatus.exposureMode();
+        response["opts"] = QJsonArray::fromStringList(cameraStatus.exposureModes());
+    }
+    else
+    {
+        response["error"] = "Key does not (yet ?) exists";
+    }
+
+    return QJsonDocument(response);
 }
 
 QJsonDocument CameraServer::ctrlMode(QMap<QString, QString> params)

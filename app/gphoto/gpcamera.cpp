@@ -482,7 +482,7 @@ int GPCamera::gpGetRangeWidgetInfo(QString widgetName, float* min, float* max, f
     return ret;
 }
 
-bool GPCamera::extractWidgetChoices(QString widgetName, QList<QString>& choices)
+bool GPCamera::extractWidgetChoices(QString widgetName, QStringList& choices)
 {
     int ret;
     CameraWidget* widget;
@@ -966,7 +966,7 @@ bool GPCamera::setCaptureMode(CaptureMode captureMode)
 
 // Aperture
 
-QList<QString> GPCamera::apertures()
+QStringList GPCamera::apertures()
 {
     return m_cameraApertures;
 }
@@ -1037,7 +1037,7 @@ bool GPCamera::decreaseAperture()
 
 // Shutter speed
 
-QList<QString> GPCamera::shutterSpeeds()
+QStringList GPCamera::shutterSpeeds()
 {
     return m_cameraShutterSpeeds;
 }
@@ -1106,7 +1106,7 @@ bool GPCamera::decreaseShutterSpeed()
 
 // ISO
 
-QList<QString> GPCamera::isos()
+QStringList GPCamera::isos()
 {
     return m_cameraIsos;
 }
@@ -1175,7 +1175,7 @@ bool GPCamera::decreaseIso()
 
 // Exposure mode
 
-QList<QString> GPCamera::exposureModes()
+QStringList GPCamera::exposureModes()
 {
     return m_exposureModes;
 }

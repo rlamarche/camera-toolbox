@@ -12,8 +12,6 @@
 #include <QList>
 #include <QMutex>
 
-#define HPIS_SRV_CTRL_ISO "iso"
-#define HPIS_SRV_CTRL_ISO_AUTO "Auto"
 
 namespace hpis {
 
@@ -34,8 +32,6 @@ protected:
     void ctrlShutdown();
 
 private:
-    static QStringList ctrls;
-
     CameraThread* m_cameraThread;
     qhttp::server::QHttpServer m_httpServer;
 

@@ -79,14 +79,20 @@ QJsonObject CameraStatus::toJsonObject()
 {
     QJsonObject status;
 
-    //status["exposureModes"] = QJsonArray(m_exposureModes);
-
+    status["exposureModes"] = QJsonArray::fromStringList(m_exposureModes);
     status["exposureMode"] = m_exposureMode;
+
     status["captureMode"] = m_captureMode;
     status["isInLiveView"] = m_isInLiveView;
     status["isRecording"] = m_isRecording;
+
+    status["apertures"] = QJsonArray::fromStringList(m_apertures);
     status["aperture"] = m_aperture;
+
+    status["shutterSpeeds"] = QJsonArray::fromStringList(m_shutterSpeeds);
     status["shutterSpeed"] = m_shutterSpeed;
+
+    status["isos"] = QJsonArray::fromStringList(m_isos);
     status["iso"] = m_iso;
 
     return status;

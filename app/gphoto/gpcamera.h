@@ -85,14 +85,14 @@ public:
     bool exposurePreview();
 
     // Aperture
-    QList<QString> apertures();
+    QStringList apertures();
     QString aperture();
     bool setAperture(QString aperture);
     bool increaseAperture();
     bool decreaseAperture();
 
     // Shutter speed
-    QList<QString> shutterSpeeds();
+    QStringList shutterSpeeds();
     bool setShutterSpeed(QString shutterSpeed);
     QString shutterSpeed();
     bool increaseShutterSpeed();
@@ -103,14 +103,14 @@ public:
     bool setIsoAuto(bool isoAuto);
 
     // ISO
-    QList<QString> isos();
+    QStringList isos();
     QString iso();
     bool setIso(QString iso);
     bool increaseIso();
     bool decreaseIso();
 
     // Exposure mode
-    QList<QString> exposureModes();
+    QStringList exposureModes();
     QString exposureMode();
     bool setExposureMode(QString exposureMode);
     bool exposureModePlus();
@@ -141,7 +141,7 @@ protected:
 
     bool lookupWidgets(CameraWidget* widget, QString path);
 
-    bool extractWidgetChoices(QString widgetName, QList<QString>& choice);
+    bool extractWidgetChoices(QString widgetName, QStringList& choice);
 
     // get widget value
     int gpGetToggleWidgetValue(QString widgetName, int* value);
@@ -211,30 +211,30 @@ private:
     bool m_isInLiveView;
     bool m_isRecording;
 
-    QList<QString> m_cameraApertures;
+    QStringList m_cameraApertures;
     int m_cameraAperture;
 
-    QList<QString> m_cameraShutterSpeeds;
+    QStringList m_cameraShutterSpeeds;
     int m_cameraShutterSpeed;
 
-    QList<QString> m_cameraIsos;
+    QStringList m_cameraIsos;
     int m_cameraIso;
 
     bool m_cameraIsoAuto;
 
-    QList<QString> m_exposureModes;
+    QStringList m_exposureModes;
     int m_exposureMode;
 
-    QList<QString> m_lvZoomRatios;
+    QStringList m_lvZoomRatios;
     int m_lvZoomRatio;
 
-    QList<QString> m_recordingMedias;
+    QStringList m_recordingMedias;
     int m_recordingMedia;
 
-    QList<QString> m_captureTargets;
+    QStringList m_captureTargets;
     int m_captureTarget;
 
-    QList<QString> m_stillCaptureModes;
+    QStringList m_stillCaptureModes;
     int m_stillCaptureMode;
 
     bool m_viewfinder;
@@ -246,7 +246,7 @@ private:
     int m_programShiftValueMax;
     int m_programShiftValueStep;
 
-    QList<QString> m_exposureCompensations;
+    QStringList m_exposureCompensations;
     int m_exposureCompensation;
 
 signals:
