@@ -70,4 +70,51 @@ Keys :
 
 ## Setup
 
-See INSTALL
+Use a provided image (TODO)
+
+Or :
+
+Follow install guides here : https://wiki.qt.io/RaspberryPi2EGLFS using Qt 5.7.0 branch.
+Use a Raspbian Jessie Lite : https://www.raspberrypi.org/downloads/raspbian/
+
+**Note** : apply the following patch to QtBase https://github.com/rlamarche/qtbase/commit/81eda315d1720215d99a04de8ad95893c231ef20
+
+Make sure to have installed the following packages :
+
+sudo apt-get install libudev-dev libinput-dev libts-dev libxcb-xinerama0-dev htop
+sudo apt-get install libltdl-dev
+sudo apt-get install libexif-dev
+sudo apt-get install libturbojpeg1-dev
+sudo apt-get install libusb-dev
+sudo apt-get install libusb-1.0-0-dev
+sudo apt-get install gdb-multiarch
+sudo apt-get install xkb-data console-data
+sudo apt-get install gphoto2
+
+
+## Compile
+
+In this repo, run : 
+
+```
+#!bash
+git submodule init
+git submodule update
+cd vendor/libgphoto2
+autoreconf --install --symlink
+./configure --with-sysroot=<path to your sysroot>
+cd ../../
+<path to qt5 raspberry pi qmake>/qmake
+
+
+```
+
+## Run
+
+Connect a screen to your Raspberry PI
+
+```
+#!bash
+cd /home/pi
+QT_QPA_EGLFS_FORCE888=1 ./hpis
+```
