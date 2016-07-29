@@ -103,6 +103,7 @@ git submodule update
 
 cd vendor/libgphoto2
 autoreconf --install --symlink
+CFLAGS="--sysroot /path/to/sysroot" PATH="$PATH:/path/to/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/" ./configure --host=arm-linux-gnueabihf
 cd ../../
 
 cd vendor/qhttp
