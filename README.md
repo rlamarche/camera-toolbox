@@ -100,8 +100,8 @@ In this repo, run :
 #!bash
 git submodule init
 git submodule update
-cd vendor/libgphoto2
 
+cd vendor/libgphoto2
 cp ../../libgphoto2/config.h ./
 cp ../../libgphoto2_port/config.h libgphoto_port/
 cd ../../
