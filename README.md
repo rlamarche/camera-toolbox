@@ -103,7 +103,7 @@ git submodule update
 
 cd vendor/libgphoto2
 cp ../../libgphoto2/config.h ./
-cp ../../libgphoto2_port/config.h libgphoto_port/
+cp ../../libgphoto2_port/config.h libgphoto2_port/
 cd ../../
 
 cd vendor/qhttp
