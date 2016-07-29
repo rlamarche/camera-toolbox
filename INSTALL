@@ -1,5 +1,15 @@
+Use a provided image (TODO)
+
+Or :
+
+Follow install guides here : https://wiki.qt.io/RaspberryPi2EGLFS
+Note : apply the following patch https://github.com/rlamarche/qtbase/commit/81eda315d1720215d99a04de8ad95893c231ef20
+
+Make sure to have installed the following packages :
+
+
 sudo nano /etc/apt/sources.list
-# uncomment src
+# uncomment src repo
 
 sudo apt-get update
 
