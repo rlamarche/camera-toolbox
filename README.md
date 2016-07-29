@@ -102,8 +102,7 @@ git submodule init
 git submodule update
 
 cd vendor/libgphoto2
-cp ../../libgphoto2/config.h ./
-cp ../../libgphoto2_port/config.h libgphoto2_port/
+autoreconf --install --symlink
 cd ../../
 
 cd vendor/qhttp
