@@ -101,12 +101,17 @@ In this repo, run :
 git submodule init
 git submodule update
 cd vendor/libgphoto2
-autoreconf --install --symlink
-./configure --with-sysroot=<path to your sysroot>
+
+cp ../../libgphoto2/config.h ./
+cp ../../libgphoto2_port/config.h libgphoto_port/
 cd ../../
+
+cd vendor/qhttp
+./update-dependencies.sh
+cd ../../
+
 <path to qt5 raspberry pi qmake>/qmake
-
-
+make
 ```
 
 ## Run
