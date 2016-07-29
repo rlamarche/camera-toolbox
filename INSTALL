@@ -33,6 +33,10 @@ RUN :
 
 ENV VARS :
 
-QT_QPA_EGLFS_FORCE888=1
+cd /home/pi
+QT_QPA_EGLFS_FORCE888=1 ./hpis
+
+
+# Note : this env var is not working
 QT_QPA_EVDEV_KEYBOARD_PARAMETERS="keymap=/home/pi/fr.qmap"
 
