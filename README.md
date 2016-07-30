@@ -114,6 +114,17 @@ cd ../../
 make
 ```
 
+Create folder `/home/pi` with write access from your current user then run :
+
+```
+#!bash
+make install
+```
+
+The binaries + lib will be installed in /home/pi folder.
+
+If you compile with Qt Creator, you can configure it to upload binaries directly on the Raspberry PI and run.
+
 ## Run
 
 Connect a screen to your Raspberry PI
@@ -123,3 +134,10 @@ Connect a screen to your Raspberry PI
 cd /home/pi
 QT_QPA_EGLFS_FORCE888=1 ./hpis
 ```
+
+## Notes
+
+**Note on libgphoto2** :
+
+libgphoto2 has been integrated to the build of the project so that I can debug & patch it easily.
+Note that I have also activated verbose logging of libghoto2 for debugging purpose.
