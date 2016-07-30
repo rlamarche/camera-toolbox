@@ -135,6 +135,10 @@ cd /home/pi
 QT_QPA_EGLFS_FORCE888=1 ./hpis
 ```
 
+## Qt Creator Configuration
+
+See screen capture in folder QtCreator.
+
 ## Notes
 
 **Note on libgphoto2** :
