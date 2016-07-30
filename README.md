@@ -81,6 +81,8 @@ Use a Raspbian Jessie Lite : https://www.raspberrypi.org/downloads/raspbian/
 
 Make sure to have installed the following packages :
 
+```
+#!bash
 sudo apt-get install libudev-dev libinput-dev libts-dev libxcb-xinerama0-dev htop
 sudo apt-get install libltdl-dev
 sudo apt-get install libexif-dev
@@ -90,6 +92,7 @@ sudo apt-get install libusb-1.0-0-dev
 sudo apt-get install gdb-multiarch
 sudo apt-get install xkb-data console-data
 sudo apt-get install gphoto2
+```
 
 
 ## Compile
