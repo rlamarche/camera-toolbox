@@ -10,7 +10,7 @@ The goal is to support any camera model from any brand through a unified API, so
 
 ## History
 
-I started this project after a call with Pascal Sabiani (from Azuru Diving), the creator of the underwater camera housing called "HPIS".
+I started this project after a call with Pascal (from Azuru Diving), the creator of the underwater camera housing called "HPIS".
 He told me about his project to construct a **universal** underwater camera housing based and was looking for developers to help him and Alexandre (the main software developer of the HPIS) to integrate cameras like Nikon or Canon DSLR.
 
 We conclude that almost all software development around the HPIS will be open-source, and after looking over the internet I decided that this tool would not be dedicated to the HPIS but for any camera owner.
