@@ -22,7 +22,7 @@ INCLUDEPATH = \
     ../../vendor/libgphoto2 \
     ../../vendor/libgphoto2/libgphoto2 \
     ../../vendor/libgphoto2/libgphoto2_port \
-    /usr/include/libxml2
+    $$[QT_SYSROOT]/usr/include//libxml2
 
 QMAKE_CFLAGS = -g -O2 -Wall -Wmissing-declarations -Wmissing-prototypes -fPIC
 

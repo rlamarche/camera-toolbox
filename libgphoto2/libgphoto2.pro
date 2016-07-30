@@ -30,7 +30,7 @@ INCLUDEPATH = \
     ../vendor/libgphoto2 \
     ../vendor/libgphoto2/libgphoto2 \
     ../vendor/libgphoto2/libgphoto2_port \
-    /usr/include/libxml2
+    $$[QT_SYSROOT]/usr/include/libxml2
 
 LIBS += \
         -L../libgphoto2_port -llibgphoto2_port \
