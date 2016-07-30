@@ -79,7 +79,7 @@ Use a Raspbian Jessie Lite : https://www.raspberrypi.org/downloads/raspbian/
 
 **Note** : apply the following patch to QtBase https://github.com/rlamarche/qtbase/commit/81eda315d1720215d99a04de8ad95893c231ef20
 
-Make sure to have installed the following packages :
+Make sure to have installed the following packages on the Raspberry PI :
 
 ```
 sudo apt-get install libudev-dev libinput-dev libts-dev libxcb-xinerama0-dev htop
@@ -93,6 +93,7 @@ sudo apt-get install xkb-data console-data
 sudo apt-get install gphoto2
 ```
 
+If you installed these packages after rsyncing the sysroot, rerun the resync command & fix symlinks.
 
 ## Compile
 
