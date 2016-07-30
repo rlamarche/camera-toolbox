@@ -82,7 +82,6 @@ Use a Raspbian Jessie Lite : https://www.raspberrypi.org/downloads/raspbian/
 Make sure to have installed the following packages :
 
 ```
-#!bash
 sudo apt-get install libudev-dev libinput-dev libts-dev libxcb-xinerama0-dev htop
 sudo apt-get install libltdl-dev
 sudo apt-get install libexif-dev
@@ -100,7 +99,6 @@ sudo apt-get install gphoto2
 In this repo, run : 
 
 ```
-#!bash
 git submodule init
 git submodule update
 
@@ -120,7 +118,6 @@ make
 Create folder `/home/pi` with write access from your current user then run :
 
 ```
-#!bash
 make install
 ```
 
@@ -133,7 +130,6 @@ If you compile with Qt Creator, you can configure it to upload binaries directly
 Connect a screen to your Raspberry PI
 
 ```
-#!bash
 cd /home/pi
 QT_QPA_EGLFS_FORCE888=1 ./hpis
 ```
