@@ -126,6 +126,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         break;
 
     case Qt::Key_Enter:
+    case Qt::Key_L:
         m_cameraThread->executeCommand(CameraThread::CommandToggleLiveview);
         break;
 

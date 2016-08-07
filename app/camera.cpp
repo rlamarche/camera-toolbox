@@ -17,6 +17,7 @@
  */
 #include "camera.h"
 #include "camerastatus.h"
+#include "camerainfo.h"
 
 using namespace hpis;
 
@@ -50,4 +51,14 @@ CameraStatus hpis::Camera::status()
 
 
     return cs;
+}
+
+CameraInfo hpis::Camera::info()
+{
+    CameraInfo info;
+    info.m_displayName = displayName();
+    info.m_manufacturer = manufacturer();
+    info.m_cameraModel = cameraModel();
+
+    return info;
 }

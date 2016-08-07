@@ -1,20 +1,29 @@
 #ifndef CAMERAPREVIEW_H
 #define CAMERAPREVIEW_H
 
+#include <QByteArray>
+#include <QString>
+#include <QObject>
+
+namespace hpis {
 
 class CameraPreview
 {
 public:
-    enum Format {
-        FormatJPG
-    };
-
-    CameraPreview();
+    CameraPreview() {}
+    CameraPreview(QByteArray& data, QString mimetype);
     virtual ~CameraPreview() {}
 
-    virtual const char* data() = 0;
-    virtual unsigned long size() = 0;
-    virtual Format format() = 0;
+    const QByteArray data();
+    QString mimetype();
+
+private:
+    QByteArray m_data;
+    QString m_mimetype;
 };
+
+}
+
+Q_DECLARE_METATYPE(hpis::CameraPreview)
 
 #endif // CAMERAPREVIEW_H

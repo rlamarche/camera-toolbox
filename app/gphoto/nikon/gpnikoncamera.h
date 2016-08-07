@@ -1,9 +1,58 @@
-#ifndef GPCAMERAPREVIEW_H
-#define GPCAMERAPREVIEW_H
+#ifndef GPNIKONCAMERA_H
+#define GPNIKONCAMERA_H
 
-#include "../camerapreview.h"
+#include "../gpcamera.h"
 
-#include <gphoto2/gphoto2-camera.h>
+#include <QObject>
+
+#define CAMERA_NIKON_D800 "D800"
+
+namespace hpis {
+
+class GPNikonCamera : public GPCamera
+{
+    Q_OBJECT
+public:
+    explicit GPNikonCamera(QString cameraModel, QString cameraPort, QObject *parent = 0);
+    virtual QSet<CameraCapability> capabilities();
+    bool capturePreview(CameraPreview& cameraPreview);
+
+protected:
+    // ---------- Read
+    virtual bool gpReadCaptureMode();
+    virtual bool gpReadIsoAuto();
+    virtual bool gpReadLvZoomRatio();
+    virtual bool gpReadExposurePreview();
+
+    // ---------- Get / Set
+    virtual bool setCaptureMode(CaptureMode captureMode);
+    virtual bool setIsoAuto(bool isoAuto);
+
+    virtual bool increaseLvZoomRatio();
+    virtual bool decreaseLvZoomRatio();
+
+    // Exposure preview
+    virtual bool setExposurePreview(bool exposurePreview);
+
+    // ---------- Widget names
+    virtual QString viewfinderWidgetName();
+    virtual QString apertureWidgetName();
+    virtual QString shutterSpeedWidgetName();
+    virtual QString isoWidgetName();
+
+    virtual QString exposurePreviewWidgetName();
+
+    virtual QString exposureModeWidgetName();
+    virtual QString captureModeWidgetName();
+    virtual QString liveviewSelectorWidgetName();
+    virtual QString lvZoomRatioWidgetName();
+    virtual QString isoAutoWidgetName();
+
+    virtual QString exposureCompensationWidgetName();
+signals:
+
+public slots:
+};
 
 
 struct NikonLiveViewHeader {
@@ -257,25 +306,6 @@ struct NikonLiveViewHeader {
     uint16_t reserved_15;
 };
 
-class GPCameraPreview : public CameraPreview
-{
-public:
-    GPCameraPreview(CameraFile* cameraFile);
-    GPCameraPreview(const GPCameraPreview& copy);
 
-    ~GPCameraPreview();
-
-    const char* data();
-    unsigned long size();
-    Format format();
-
-private:
-    CameraFile* m_cameraFile;
-
-    NikonLiveViewHeader m_nikonLvHeader;
-
-    const char* m_data;
-    unsigned long m_size;
-};
-
-#endif // GPCAMERAPREVIEW_H
+}
+#endif // GPNIKONCAMERA_H

@@ -3,6 +3,8 @@
 
 #include "camera.h"
 #include "camerastatus.h"
+#include "camerainfo.h"
+#include "camerasettings.h"
 
 #include <QObject>
 #include <QThread>
@@ -93,8 +95,10 @@ public:
     explicit CameraThread(hpis::Camera* camera, QObject *parent = 0);
     void stop();
     void executeCommand(Command executeCommand);
-    CameraStatus cameraStatus();
 
+    CameraStatus cameraStatus();
+    CameraInfo cameraInfo();
+    void setCameraSettings(CameraSettings cameraSettings);
 protected:
     // Thread main loop
     void run();
@@ -104,7 +108,8 @@ protected:
     void shutdown();
 
     // Camera control
-    hpis::CameraStatus doCommand(Command executeCommand) const;
+    CameraStatus doCommand(Command executeCommand) const;
+
 
 
     void doCapturePreview();
@@ -116,7 +121,9 @@ private:
 
     // Thread control
     bool m_stop;
-    hpis::CameraStatus m_cameraStatus;
+    CameraStatus m_cameraStatus;
+    CameraInfo m_cameraInfo;
+
 
     int refreshTimeoutMs;
 
@@ -137,7 +144,7 @@ private:
     QString m_cameraPort;
 
 signals:
-    void previewAvailable(CameraPreview::Format format, QByteArray bytes);
+    void previewAvailable(hpis::CameraPreview cameraPreview);
     void imageAvailable(QImage preview);
     void cameraStatusAvailable(hpis::CameraStatus cameraStatusAvailable);
 public slots:

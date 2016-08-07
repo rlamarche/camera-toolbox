@@ -36,7 +36,7 @@ CameraServer::CameraServer(CameraThread* cameraThread, QObject *parent) : m_came
         fprintf(stderr, "failed. can not listen at port 8080!\n");
     }
 
-    connect(cameraThread, SIGNAL(previewAvailable(CameraPreview::Format,QByteArray)), this, SLOT(previewAvailable(CameraPreview::Format,QByteArray)));
+    connect(cameraThread, SIGNAL(previewAvailable(hpis::CameraPreview)), this, SLOT(previewAvailable(hpis::CameraPreview)));
 }
 
 void CameraServer::ctrlSet(QMap<QString, QString> params)
@@ -157,73 +157,83 @@ void CameraServer::ctrlRec(QMap<QString, QString> params)
 
 void CameraServer::processRequest(qhttp::server::QHttpRequest* req, qhttp::server::QHttpResponse* res)
 {
+    QString prefix("/api/v1/");
+    QByteArray body;
     QUrl url = req->url();
-
-    QUrlQuery query(url);
-    QMap<QString, QString> params;
-
-    QList<QPair<QString, QString> > queryItems = query.queryItems();
-    QList<QPair<QString, QString> >::iterator i;
-    for (i = queryItems.begin(); i != queryItems.end(); ++i)
-    {
-        QPair<QString, QString> item = *i;
-        params[item.first] = item.second;
-    }
-
-
     QString path = url.path();
-    QJsonDocument jsonResponse;
 
-    if (path == "/ctrl/set")
+    if (path.startsWith(prefix))
     {
-        ctrlSet(params);
-    }
-    else if (path == "/ctrl/get")
-    {
-        jsonResponse = ctrlGet(params);
-    }
-    else if (path == "/ctrl/mode")
-    {
-        jsonResponse = ctrlMode(params);
-    }
-    else if (path == "/ctrl/shutdown")
-    {
-        ctrlShutdown();
-    }
-    else if (path == "/ctrl/rec")
-    {
-        ctrlRec(params);
-    }
-    else if (path == "/ctrl/focus")
-    {
-        m_cameraThread->executeCommand(CameraThread::CommandAfDrive);
-    }
-    else if (path == "/liveView.mjpg")
-    {
-        m_LiveViewListMutex.lock();
-        m_liveViewList.append(res);
-        m_LiveViewListMutex.unlock();
-        connect(res, SIGNAL(destroyed(QObject*)), this, SLOT(responseDestroyed(QObject*)));
+        new CameraApiV1(m_connectionCounter++, req, res, m_cameraThread);
+    } else {
+
+        QUrl url = req->url();
+
+        QUrlQuery query(url);
+        QMap<QString, QString> params;
+
+        QList<QPair<QString, QString> > queryItems = query.queryItems();
+        QList<QPair<QString, QString> >::iterator i;
+        for (i = queryItems.begin(); i != queryItems.end(); ++i)
+        {
+            QPair<QString, QString> item = *i;
+            params[item.first] = item.second;
+        }
+
+
+        QJsonDocument jsonResponse;
+
+        if (path == "/ctrl/set")
+        {
+            ctrlSet(params);
+        }
+        else if (path == "/ctrl/get")
+        {
+            jsonResponse = ctrlGet(params);
+        }
+        else if (path == "/ctrl/mode")
+        {
+            jsonResponse = ctrlMode(params);
+        }
+        else if (path == "/ctrl/shutdown")
+        {
+            ctrlShutdown();
+        }
+        else if (path == "/ctrl/rec")
+        {
+            ctrlRec(params);
+        }
+        else if (path == "/ctrl/focus")
+        {
+            m_cameraThread->executeCommand(CameraThread::CommandAfDrive);
+        }
+        else if (path == "/liveView.mjpg" || path == "/api/liveView.mjpg")
+        {
+            m_LiveViewListMutex.lock();
+            m_liveViewList.append(res);
+            m_LiveViewListMutex.unlock();
+            connect(res, SIGNAL(destroyed(QObject*)), this, SLOT(responseDestroyed(QObject*)));
+            res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
+            res->addHeader("Content-type","multipart/x-mixed-replace; boundary=--jpgboundary");
+            res->addHeader("Cache-Control", "no-cache, must revalidate");
+            return;
+        }
+        else if (path == "/preview.jpg" || path == "/preview.jpg")
+        {
+            m_previewListMutex.lock();
+            m_previewList.append(res);
+            m_previewListMutex.unlock();
+            connect(res, SIGNAL(destroyed(QObject*)), this, SLOT(responseDestroyed(QObject*)));
+            res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
+            res->addHeader("Content-type","image/jpeg");
+            res->addHeader("Cache-Control", "no-cache, must revalidate");
+            return;
+        }
         res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
-        res->addHeader("Content-type","multipart/x-mixed-replace; boundary=--jpgboundary");
-        res->addHeader("Cache-Control", "no-cache, must revalidate");
-        return;
+        res->addHeader("connection", "close");      // it's the default header, this line can be omitted.
+        res->addHeader("Content-Type", "application/json");
+        res->end(jsonResponse.toJson());
     }
-    else if (path == "/preview.jpg")
-    {
-        m_previewListMutex.lock();
-        m_previewList.append(res);
-        m_previewListMutex.unlock();
-        connect(res, SIGNAL(destroyed(QObject*)), this, SLOT(responseDestroyed(QObject*)));
-        res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
-        res->addHeader("Content-type","image/jpeg");
-        res->addHeader("Cache-Control", "no-cache, must revalidate");
-        return;
-    }
-    res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
-    res->addHeader("connection", "close");      // it's the default header, this line can be omitted.
-    res->addHeader("Content-Type", "application/json");
-    res->end(jsonResponse.toJson());
 }
 
 #include <QDebug>
@@ -239,7 +249,7 @@ void CameraServer::responseDestroyed(QObject *resp)
     m_LiveViewListMutex.unlock();
 }
 
-void CameraServer::previewAvailable(CameraPreview::Format format, QByteArray bytes)
+void CameraServer::previewAvailable(CameraPreview cameraPreview)
 {
     // TODO use format
     QMutexLocker locker(&m_LiveViewListMutex);
@@ -251,15 +261,15 @@ void CameraServer::previewAvailable(CameraPreview::Format format, QByteArray byt
         qhttp::server::QHttpResponse* resp = *i;
         resp->write(QString("--jpgboundary").toLocal8Bit());
         resp->write(QString("Content-Type: image/jpeg\r\n").toLocal8Bit());
-        resp->write(QString("Content-length: %1\r\n").arg(bytes.size()).toLocal8Bit());
+        resp->write(QString("Content-length: %1\r\n").arg(cameraPreview.data().size()).toLocal8Bit());
         resp->write(QString("\r\n").toLocal8Bit());
-        resp->write(bytes);
+        resp->write(cameraPreview.data());
     }
 
     for (i = m_previewList.begin(); i != m_previewList.end(); ++i)
     {
         qhttp::server::QHttpResponse* resp = *i;
-        resp->end(bytes);
+        resp->end(cameraPreview.data());
     }
     m_previewList.clear();
 

@@ -9,6 +9,7 @@
 namespace hpis {
 
 class CameraStatus;
+class CameraInfo;
 
 class Camera : public QObject
 {
@@ -20,6 +21,23 @@ class Camera : public QObject
     Q_PROPERTY(QString iso READ iso WRITE setIso)
     Q_PROPERTY(bool isoAuto READ isoAuto WRITE setIsoAuto)
 public:
+    enum CameraCapability {
+        LiveView,
+        CapturePhoto,
+        RecordMovie,
+        AfDrive,
+        ChangeExposureMode,
+        ChangeAfArea,
+        ChangeAperture,
+        ChangeShutterSpeed,
+        ChangeIso,
+        IsoAuto,
+        ChangeExposurePreview,
+        Zoom,
+        ChangeExposureCompensation,
+        ChangeProgramShiftValue
+    };
+
     enum CaptureMode {
         CaptureModePhoto,
         CaptureModeVideo
@@ -27,6 +45,12 @@ public:
 
     explicit Camera(QObject *parent = 0);
     virtual ~Camera() {};
+
+    // Info
+    virtual QString displayName() = 0;
+    virtual QSet<CameraCapability> capabilities() = 0;
+    virtual QString manufacturer() = 0;
+    virtual QString cameraModel() = 0;
 
     // Init / Shutdown / Read
     virtual bool init() = 0;
@@ -46,7 +70,7 @@ public:
     virtual bool changeAfArea(int x, int y) = 0;
 
     // Live view
-    virtual bool capturePreview(CameraPreview** cameraPreview) = 0;
+    virtual bool capturePreview(CameraPreview& cameraPreview) = 0;
     virtual bool startLiveView() = 0;
     virtual bool stopLiveView() = 0;
     virtual bool isInLiveView() = 0;
@@ -111,6 +135,7 @@ public:
     virtual bool decreaseExposureCompensation() = 0;
 
     CameraStatus status();
+    CameraInfo info();
 signals:
 
 public slots:

@@ -17,6 +17,7 @@
  */
 
 #include "mainwindow.h"
+
 #include <QApplication>
 #include <QOpenGLWindow>
 
@@ -33,7 +34,7 @@
 
 #include <assert.h>
 
-#include "gphoto/gpcamera.h"
+#include "gphoto/nikon/gpnikoncamera.h"
 
 #ifdef USE_RPI
 #include "hello_jpeg_v2/Logger.h"
@@ -169,7 +170,7 @@ bool lookupCamera(hpis::Camera** camera) {
     gp_list_get_name  (cameraList, 0, &modelName);
     gp_list_get_value (cameraList, 0, &portName);
 
-    *camera = new hpis::GPCamera(QString(modelName), QString(portName));
+    *camera = new hpis::GPNikonCamera(QString(modelName), QString(portName));
 
     gp_context_unref(context);
     return true;
@@ -198,7 +199,7 @@ void catchUnixSignals(const std::vector<int>& quitSignals,
 int main(int argc, char *argv[])
 {
     qRegisterMetaType<hpis::CameraStatus>();
-    qRegisterMetaType<CameraPreview::Format>("CameraPreview::Format");
+    qRegisterMetaType<hpis::CameraPreview>();
 
 /*
     OMXImageDecoder* decoder = new OMXImageDecoder();
@@ -268,7 +269,7 @@ int main(int argc, char *argv[])
 
     hpis::Camera* camera;
 
-    if (lookupCamera(&camera))
+    if (lookupCamera(&camera) && camera->init())
     {
         hpis::CameraThread cameraThread(camera);
 

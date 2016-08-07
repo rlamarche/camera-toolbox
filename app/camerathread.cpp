@@ -103,7 +103,7 @@ CameraThread::Command CameraThread::Command::setProperty(QString propertyName, Q
 CameraThread::CameraThread(Camera* camera, QObject *parent) : QThread(parent),
     m_camera(camera), m_stop(false), m_decoderThread(0)
 {
-    refreshTimeoutMs = 2000;
+    refreshTimeoutMs = 1000;
 }
 
 
@@ -112,7 +112,9 @@ bool CameraThread::init()
     m_decoderThread = new DecoderThread(this);
     m_decoderThread->start();
 
-    return m_camera->init();
+    m_cameraInfo = m_camera->info();
+
+    return true;
 }
 
 void CameraThread::shutdown()
@@ -210,17 +212,34 @@ CameraStatus CameraThread::cameraStatus()
     return m_cameraStatus;
 }
 
+CameraInfo CameraThread::cameraInfo()
+{
+    return m_cameraInfo;
+}
+
+void CameraThread::setCameraSettings(CameraSettings cameraSettings)
+{
+    if (!cameraSettings.aperture().isNull())
+    {
+        executeCommand(Command::setProperty("aperture", cameraSettings.aperture()));
+    }
+    if (!cameraSettings.shutterSpeed().isNull())
+    {
+        executeCommand(Command::setProperty("shutterSpeed", cameraSettings.shutterSpeed()));
+    }
+    if (!cameraSettings.iso().isNull())
+    {
+        executeCommand(Command::setProperty("iso", cameraSettings.iso()));
+    }
+}
+
 void CameraThread::doCapturePreview()
 {
-    CameraPreview* cameraPreview;
-    if (m_camera->capturePreview(&cameraPreview))
+    CameraPreview cameraPreview;
+    if (m_camera->capturePreview(cameraPreview))
     {
-        QByteArray bytes(cameraPreview->data(), cameraPreview->size());
-        emit previewAvailable(cameraPreview->format(), bytes);
-        if (!m_decoderThread->decodePreview(cameraPreview))
-        {
-            delete cameraPreview;
-        }
+        emit previewAvailable(cameraPreview);
+        m_decoderThread->decodePreview(cameraPreview);
     } else {
         //m_liveview = false;
         qInfo() << "The camera is not ready, try again later.";

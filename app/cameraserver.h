@@ -5,6 +5,8 @@
 
 #include "camerathread.h"
 
+#include "api/cameraapiv1.h"
+
 #include <qhttpserver.hpp>
 #include <qhttpserverrequest.hpp>
 #include <qhttpserverresponse.hpp>
@@ -31,6 +33,7 @@ protected:
     void ctrlRec(QMap<QString, QString> params);
     void ctrlShutdown();
 
+
 private:
     CameraThread* m_cameraThread;
     qhttp::server::QHttpServer m_httpServer;
@@ -39,11 +42,13 @@ private:
     QList<qhttp::server::QHttpResponse*> m_liveViewList;
     QMutex m_previewListMutex;
     QList<qhttp::server::QHttpResponse*> m_previewList;
+    quint64 m_connectionCounter = 0;
+
 signals:
 
 public slots:
     void responseDestroyed(QObject* resp);
-    void previewAvailable(CameraPreview::Format format, QByteArray bytes);
+    void previewAvailable(hpis::CameraPreview cameraPreview);
 };
 
 }

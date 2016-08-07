@@ -18,12 +18,16 @@ SOURCES += \
     decoderthread.cpp \
     camera.cpp \
     camerapreview.cpp \
-    gphoto/gpcamerapreview.cpp \
+#    gphoto/gpcamerapreview.cpp \
     gphoto/gpcamera.cpp \
     camerastatus.cpp \
 #    histogram/imageanalyzer.cpp \
 #    histogram/histogram.cpp
-    cameraserver.cpp
+    cameraserver.cpp \
+    api/cameraapiv1.cpp \
+    camerainfo.cpp \
+    camerasettings.cpp \
+    gphoto/nikon/gpnikoncamera.cpp
 
 
 
@@ -33,12 +37,16 @@ HEADERS  += mainwindow.h \
     decoderthread.h \
     camera.h \
     camerapreview.h \
-    gphoto/gpcamerapreview.h \
+#    gphoto/gpcamerapreview.h \
     gphoto/gpcamera.h \
     camerastatus.h \
 #    histogram/imageanalyzer.h \
 #    histogram/histogram.h
-    cameraserver.h
+    cameraserver.h \
+    api/cameraapiv1.h \
+    camerainfo.h \
+    camerasettings.h \
+    gphoto/nikon/gpnikoncamera.h
 
 
 INCLUDEPATH += ../vendor/libgphoto2 ../vendor/libgphoto2/libgphoto2_port ../vendor/qhttp/src

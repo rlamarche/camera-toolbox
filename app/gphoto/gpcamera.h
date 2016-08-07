@@ -41,6 +41,11 @@ public:
     explicit GPCamera(QString cameraModel, QString cameraPort, QObject *parent = 0);
     ~GPCamera();
 
+    // Infos
+    QString displayName();
+    QString manufacturer();
+    QString cameraModel();
+
     // Init / Shutdown / Read
     bool init();
     void shutdown();
@@ -59,13 +64,13 @@ public:
     bool changeAfArea(int x, int y);
 
     // Live view
-    bool capturePreview(CameraPreview** cameraPreview);
+    bool capturePreview(CameraPreview& cameraPreview);
     bool startLiveView();
     bool stopLiveView();
     bool isInLiveView();
 
     // Capture mode
-    bool setCaptureMode(CaptureMode captureMode);
+    virtual bool setCaptureMode(CaptureMode captureMode) = 0;
     CaptureMode captureMode();
 
     // Recording media
@@ -81,8 +86,8 @@ public:
     QString stillCaptureMode();
 
     // Exposure preview
-    bool setExposurePreview(bool exposurePreview);
-    bool exposurePreview();
+    virtual bool setExposurePreview(bool exposurePreview) = 0;
+    virtual bool exposurePreview();
 
     // Aperture
     QStringList apertures();
@@ -100,7 +105,7 @@ public:
 
     // ISO Auto
     bool isoAuto();
-    bool setIsoAuto(bool isoAuto);
+    virtual bool setIsoAuto(bool isoAuto) = 0;
 
     // ISO
     QStringList isos();
@@ -118,8 +123,8 @@ public:
 
     // Live view zoom ratio
     QString lvZoomRatio();
-    bool increaseLvZoomRatio();
-    bool decreaseLvZoomRatio();
+    virtual bool increaseLvZoomRatio() = 0;
+    virtual bool decreaseLvZoomRatio() = 0;
 
 
     // Program shift value
@@ -141,12 +146,13 @@ protected:
 
     bool lookupWidgets(CameraWidget* widget, QString path);
 
-    bool extractWidgetChoices(QString widgetName, QStringList& choice);
+    int gpExtractWidgetChoices(QString widgetName, QStringList& choice);
 
     // get widget value
     int gpGetToggleWidgetValue(QString widgetName, int* value);
     int gpGetRadioWidgetValue(QString widgetName, QString& value);
     int gpGetRangeWidgetValue(QString widgetName, float* value);
+    int gpGetTextWidgetValue(QString widgetName, QString& value);
 
     // set widget
     int gpSetToggleWidget(QString widgetName, int toggleValue);
@@ -157,20 +163,19 @@ protected:
     int gpGetRangeWidgetInfo(QString widgetName, float* min, float* max, float* step);
 
     // widget names
-    virtual QString viewfinderWidgetName();
+    virtual QString manufacturerWidgetName();
+    virtual QString cameraModelWidgetName();
 
-    virtual QString captureModeWidgetName();
+
+    virtual QString viewfinderWidgetName() = 0;
 
     virtual QString apertureWidgetName();
     virtual QString shutterSpeedWidgetName();
     virtual QString isoWidgetName();
-    virtual QString isoAutoWidgetName();
 
-    virtual QString liveviewSelectorWidgetName();
     virtual QString afModeWidgetName();
-    virtual QString lvZoomRatioWidgetName();
 
-    virtual QString exposureModeWidgetName();
+    virtual QString exposureModeWidgetName() = 0;
 
     virtual QString afAreaWidgetName();
     virtual QString afAtWidgetName();
@@ -181,14 +186,40 @@ protected:
 
     virtual QString stillCaptureModeWidgetName();
 
-    virtual QString exposurePreviewWidgetName();
-
     virtual QString exposureCompensationWidgetName();
 
     virtual QString programShiftValueWidgetName();
 
     virtual QString exposureIndicatorWidgetName();
-private:
+
+    virtual bool gpReadCaptureMode() = 0;
+
+    virtual bool gpReadExposureMode();
+
+    virtual bool gpReadAperture();
+
+    virtual bool gpReadShutterSpeed();
+
+    virtual bool gpReadIso();
+
+    virtual bool gpReadIsoAuto() = 0;
+
+    virtual bool gpReadLvZoomRatio() = 0;
+
+    virtual bool gpReadRecordingMedia();
+
+    virtual bool gpReadCaptureTarget();
+
+    virtual bool gpReadStillCaptureMode();
+
+    virtual bool gpReadExposurePreview() = 0;
+
+    virtual bool gpReadViewFinder();
+
+    virtual bool gpReadProgramShiftValue();
+
+    virtual bool gpReadExposureCompensation();
+
 
     int m_cameraNumber;
 
@@ -202,8 +233,10 @@ private:
 
     // Camera infos
     CameraAbilities m_cameraAbilities;
-    QString m_cameraModel;
+    QString m_model;
     QString m_cameraPort;
+    QString m_manufacturer;
+    QString m_cameraModel;
 
     // Camera settings
     CaptureMode m_captureMode;
@@ -248,6 +281,10 @@ private:
 
     QStringList m_exposureCompensations;
     int m_exposureCompensation;
+
+private:
+
+
 
 signals:
 

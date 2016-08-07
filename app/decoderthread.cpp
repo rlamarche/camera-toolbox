@@ -47,7 +47,7 @@ extern "C" {
 #endif
 
 
-hpis::DecoderThread::DecoderThread(CameraThread* liveviewThread, QObject *parent) : QThread(parent), m_cameraThread(liveviewThread), m_cameraPreview(0)
+hpis::DecoderThread::DecoderThread(CameraThread* liveviewThread, QObject *parent) : QThread(parent), m_cameraThread(liveviewThread)
     //,m_helloLogstdout(), m_helloJpeg(&m_helloLogstdout)
 {
     m_stop = false;
@@ -85,24 +85,20 @@ void hpis::DecoderThread::stop()
 
 void hpis::DecoderThread::doDecodePreview()
 {
-    unsigned long int size = m_cameraPreview->size();
-    const char *data = m_cameraPreview->data();
+    QByteArray data = m_cameraPreview.data();
 
     QImage image;
 #ifdef USE_RPI
-    image = decodeImageGPU(data, size);
+    image = decodeImageGPU(data.data(), data.size());
 #else
-    image = decodeImageTurbo((const char*) data, (int) size);
+    image = decodeImageTurbo((const char*) data.data(), data.size());
     //image.loadFromData((const uchar*) data, (int) size, "JPG");
 #endif
-
-    delete m_cameraPreview;
-    m_cameraPreview = 0;
 
     m_cameraThread->previewDecoded(image);
 }
 
-bool hpis::DecoderThread::decodePreview(CameraPreview* cameraPreview)
+bool hpis::DecoderThread::decodePreview(CameraPreview& cameraPreview)
 {
     if (m_mutex.tryLock()) {
         m_cameraPreview = cameraPreview;

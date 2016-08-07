@@ -26,7 +26,7 @@ public:
     ~DecoderThread();
 
     void stop();
-    bool decodePreview(CameraPreview* cameraPreview);
+    bool decodePreview(CameraPreview& cameraPreview);
 protected:
     void run();
     void doDecodePreview();
@@ -44,7 +44,7 @@ private:
     QWaitCondition m_condition;
 
     // Data
-    CameraPreview* m_cameraPreview;
+    CameraPreview m_cameraPreview;
 
 #ifdef USE_RPI
     // Decoder (OMX)

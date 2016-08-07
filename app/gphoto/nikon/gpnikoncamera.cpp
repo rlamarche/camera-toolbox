@@ -1,26 +1,421 @@
-/*
- * This file is part of Camera Toolbox.
- *   (https://github.com/rlamarche/camera-toolbox)
- * Copyright (c) 2016 Romain Lamarche.
- *
- * Camera Toolbox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation, version 3.
- *
- * Camera Toolbox is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+#include "gpnikoncamera.h"
 
-#include "gpcamerapreview.h"
-
+#include <QSet>
 #include <QDebug>
 
-uint32_t fixBytesOrder(uint32_t val)
+using namespace hpis;
+
+GPNikonCamera::GPNikonCamera(QString cameraModel, QString cameraPort, QObject *parent) : GPCamera(cameraModel, cameraPort, parent)
+{
+
+}
+
+
+QSet<GPCamera::CameraCapability> GPNikonCamera::capabilities()
+{
+    // TODO
+    QSet<GPCamera::CameraCapability> capabilities;
+    QString exposureMode = this->exposureMode();
+
+    if (exposureMode == "M")
+    {
+        capabilities.insert(GPCamera::ChangeAperture);
+        capabilities.insert(GPCamera::ChangeShutterSpeed);
+        capabilities.insert(GPCamera::ChangeAperture);
+        capabilities.insert(GPCamera::ChangeIso);
+    }
+
+    return capabilities;
+}
+
+
+
+// -------------------------- Capture preview
+
+
+static uint32_t fixBytesOrder(uint32_t val);
+static uint16_t fixBytesOrder(uint16_t val);
+static uint8_t fixBytesOrder(uint8_t val);
+static void fixBytesOrder(NikonLiveViewHeader* lvHeader);
+
+
+// Capture preview
+bool GPNikonCamera::capturePreview(CameraPreview& cameraPreview)
+{
+    if (m_cameraModel == CAMERA_NIKON_D800)
+    {
+        CameraFile *file;
+
+        int ret = gp_file_new(&file);
+        if (ret < GP_OK) {
+            reportError(QString("Unable to create camera file for preview: %1").arg(errorCodeToString(ret)));
+            return false;
+        }
+
+        ret = gp_camera_capture_preview(m_camera, file, m_context);
+        if (ret < GP_OK) {
+            reportError(QString("Unable to capture preview: %1").arg(errorCodeToString(ret)));
+            gp_file_free(file);
+            return false;
+        }
+
+        const char *dataPtr;
+        long unsigned int dataSize;
+
+        gp_file_get_data_and_size(file, &dataPtr, &dataSize);
+
+
+        NikonLiveViewHeader nikonLvHeader = *((NikonLiveViewHeader*) dataPtr);
+        fixBytesOrder(&nikonLvHeader);
+        // TODO do something with this liveview header !
+
+
+        dataPtr = dataPtr + 384;
+        QByteArray preview(dataPtr, dataSize - 384);
+
+        cameraPreview = CameraPreview(preview, "application/jpeg");
+
+        return true;
+    }
+    else
+    {
+        return GPCamera::capturePreview(cameraPreview);
+    }
+}
+
+
+
+
+
+// -------------------------- Custom read methods
+
+bool GPNikonCamera::gpReadCaptureMode()
+{
+    int ret;
+    QString currentCaptureMode;
+    ret = gpGetRadioWidgetValue(captureModeWidgetName(), currentCaptureMode);
+    if (ret == GP_OK)
+    {
+        if (currentCaptureMode == "1")
+        {
+            m_captureMode = CaptureModeVideo;
+        } else {
+            m_captureMode = CaptureModePhoto;
+        }
+    } else {
+        m_captureMode = CaptureModePhoto;
+        return false;
+    }
+
+    return true;
+}
+
+bool GPNikonCamera::gpReadIsoAuto()
+{
+    QString currentIsoAuto;
+    int ret = gpGetRadioWidgetValue(isoAutoWidgetName(), currentIsoAuto);
+    if (ret == GP_OK)
+    {
+        if (currentIsoAuto == "On") {
+            m_cameraIsoAuto = true;
+        } else if (currentIsoAuto == "Off") {
+            m_cameraIsoAuto = false;
+        } else {
+            return false;
+        }
+
+        return true;
+    }
+    else
+    {
+        m_cameraIsoAuto = false;
+        return false;
+    }
+}
+
+
+bool GPNikonCamera::gpReadLvZoomRatio()
+{
+    int ret = gpExtractWidgetChoices(lvZoomRatioWidgetName(), m_lvZoomRatios);
+    if (ret < GP_OK)
+    {
+        m_lvZoomRatio = -1;
+        return false;
+    }
+
+
+    QString currentLvZoomRatio;
+    ret = gpGetRadioWidgetValue(lvZoomRatioWidgetName(), currentLvZoomRatio);
+    if (ret == GP_OK)
+    {
+        m_lvZoomRatio = m_lvZoomRatios.indexOf(currentLvZoomRatio);
+    } else {
+        m_lvZoomRatio = -1;
+        return false;
+    }
+
+    return true;
+}
+
+bool GPNikonCamera::gpReadExposurePreview()
+{
+    if (m_cameraModel == "D800")
+    {
+        QString currentExposurePreview;
+        int ret = gpGetRadioWidgetValue(exposurePreviewWidgetName(), currentExposurePreview);
+        if (ret == GP_OK)
+        {
+            if (currentExposurePreview == "1") {
+                m_exposurePreview = true;
+            } else if (currentExposurePreview == "0") {
+                m_exposurePreview = false;
+            }
+
+            return true;
+        }
+        else
+        {
+            m_exposurePreview = false;
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+// -------------------------- Get / Set
+
+// Capture mode
+
+bool GPNikonCamera::setCaptureMode(CaptureMode captureMode)
+{
+    int ret;
+    QString value;
+    switch (captureMode)
+    {
+    case CaptureModePhoto:
+        value = "0";
+        break;
+    case CaptureModeVideo:
+        value = "1";
+        break;
+    }
+
+    if (!value.isNull())
+    {
+        ret = gpSetRadioWidget(captureModeWidgetName(), value);
+    } else {
+        return false;
+    }
+
+    if (ret == GP_OK)
+    {
+        m_captureMode = captureMode;
+        readCameraSettings();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool GPNikonCamera::setIsoAuto(bool isoAuto)
+{
+    int ret;
+    if (isoAuto)
+    {
+        ret = gpSetRadioWidget(isoAutoWidgetName(), QString("On"));
+    }
+    else
+    {
+        ret = gpSetRadioWidget(isoAutoWidgetName(), QString("Off"));
+    }
+
+    if (ret == GP_OK)
+    {
+        m_cameraIsoAuto = isoAuto;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool GPNikonCamera::increaseLvZoomRatio()
+{
+    if (m_lvZoomRatio < m_lvZoomRatios.length() - 1)
+    {
+        int ret = gpSetRadioWidget(lvZoomRatioWidgetName(), m_lvZoomRatios[m_lvZoomRatio + 1]);
+        if (ret == GP_OK)
+        {
+            m_lvZoomRatio = m_lvZoomRatio + 1;
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+bool GPNikonCamera::decreaseLvZoomRatio()
+{
+    if (m_lvZoomRatio > 0)
+    {
+        int ret = gpSetRadioWidget(lvZoomRatioWidgetName(), m_lvZoomRatios[m_lvZoomRatio - 1]);
+        if (ret == GP_OK)
+        {
+            m_lvZoomRatio = m_lvZoomRatio - 1;
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+bool GPNikonCamera::setExposurePreview(bool exposurePreview)
+{
+    int ret;
+    if (exposurePreview)
+    {
+        ret = gpSetRadioWidget(exposurePreviewWidgetName(), QString("1"));
+    } else {
+        ret = gpSetRadioWidget(exposurePreviewWidgetName(), QString("0"));
+    }
+
+    if (ret == GP_OK)
+    {
+        m_exposurePreview = exposurePreview;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+// Custom widget names
+
+QString GPNikonCamera::captureModeWidgetName()
+{
+    return "d1a6";
+}
+
+QString GPNikonCamera::viewfinderWidgetName()
+{
+    return "viewfinder"; // canon eosviewfinder
+}
+
+QString GPNikonCamera::apertureWidgetName()
+{
+    // TODO refactoring
+    if (m_model == "Nikon DSC D800")
+    {
+        if (m_viewfinder && m_captureMode == CaptureModeVideo)
+        {
+            return "movief-number"; // d1a9
+        }
+        else
+        {
+            return "f-number"; // 5007
+        }
+    } else {
+        return "f-number";
+    }
+}
+
+QString GPNikonCamera::shutterSpeedWidgetName()
+{
+    if (m_viewfinder)
+    {
+        if (m_captureMode == CaptureModePhoto)
+        {
+            return "shutterspeed2"; // d100
+        } else {
+            return "movieshutterspeed"; // d1a8
+        }
+    } else {
+        return "shutterspeed"; // 500d
+    }
+}
+
+QString GPNikonCamera::isoWidgetName()
+{
+    if (m_viewfinder && m_captureMode == CaptureModeVideo)
+    {
+        return "movieiso"; // d1aa
+    } else {
+        return "iso"; // 500f
+    }
+}
+
+QString GPNikonCamera::isoAutoWidgetName()
+{
+    return "autoiso"; // d054
+}
+
+QString GPCamera::afModeWidgetName()
+{
+    return "liveviewaffocus"; // d061
+}
+
+QString GPCamera::afAreaWidgetName()
+{
+    return "changeafarea"; // 9205
+}
+
+QString GPCamera::afAtWidgetName()
+{
+    return "liveviewafmode"; // d05d
+}
+
+QString GPNikonCamera::exposureModeWidgetName()
+{
+    return "expprogram"; // 500e canon : autoexposuremode
+}
+
+
+QString GPNikonCamera::liveviewSelectorWidgetName()
+{
+    return "d1a6";
+}
+
+QString GPNikonCamera::lvZoomRatioWidgetName()
+{
+    return "d1a3";
+}
+
+QString GPNikonCamera::exposurePreviewWidgetName()
+{
+    return "d1a5";
+}
+
+QString GPCamera::stillCaptureModeWidgetName()
+{
+    return "capturemode"; // canon drivemode
+}
+
+QString GPCamera::recordingMediaWidgetName()
+{
+    return "recordingmedia"; // d10b
+}
+
+
+QString GPNikonCamera::exposureCompensationWidgetName()
+{
+    if (m_viewfinder && m_captureMode == CaptureModeVideo)
+    {
+        return "d1ab";
+    } else {
+        return "exposurecompensation"; // exposurecompensation2 // 5010
+    }
+}
+
+
+
+// -------------------- Utils
+
+static uint32_t fixBytesOrder(uint32_t val)
 {
     return  ((0xff000000 & val) >> 24) |
             ((0x00ff0000 & val) >> 8) |
@@ -28,18 +423,18 @@ uint32_t fixBytesOrder(uint32_t val)
             ((0x000000ff & val) << 24);
 }
 
-uint16_t fixBytesOrder(uint16_t val)
+static uint16_t fixBytesOrder(uint16_t val)
 {
     return (val >> 8) | (val << 8);
 }
 
-uint8_t fixBytesOrder(uint8_t val)
+static uint8_t fixBytesOrder(uint8_t val)
 {
     return val;
 }
 
 
-void fixBytesOrder(NikonLiveViewHeader* lvHeader)
+static void fixBytesOrder(NikonLiveViewHeader* lvHeader)
 {
 
 
@@ -289,98 +684,3 @@ void fixBytesOrder(NikonLiveViewHeader* lvHeader)
     lvHeader->reserved_15 = fixBytesOrder(lvHeader->reserved_15);
 }
 
-GPCameraPreview::GPCameraPreview(CameraFile* cameraFile) : CameraPreview(), m_cameraFile(cameraFile)
-{
-    gp_file_ref(m_cameraFile);
-    gp_file_get_data_and_size(m_cameraFile, &m_data, &m_size);
-
-    m_nikonLvHeader = *((NikonLiveViewHeader*) m_data);
-    fixBytesOrder(&m_nikonLvHeader);
-
-    unsigned char *data, *jpgStartPtr = NULL, *jpgEndPtr = NULL;
-    uint32_t size = m_size;
-
-
-    m_data = m_data + 384;
-
-    if (false) {
-        data = (unsigned char*) m_data;
-
-        /* look for the JPEG SOI marker (0xFFD8) in data */
-        jpgStartPtr = (unsigned char*)memchr(data, 0xff, size);
-        while(jpgStartPtr && ((jpgStartPtr+1) < (data + size))) {
-            if(*(jpgStartPtr + 1) == 0xd8) { /* SOI found */
-                break;
-            } else { /* go on looking (starting at next byte) */
-                jpgStartPtr++;
-                jpgStartPtr = (unsigned char*)memchr(jpgStartPtr, 0xff, data + size - jpgStartPtr);
-            }
-        }
-        if(!jpgStartPtr) { /* no SOI -> no JPEG */
-            // TODO
-        }
-        /* if SOI found, start looking for EOI marker (0xFFD9) one byte after SOI
-           (just to be sure we will not go beyond the end of the data array) */
-        jpgEndPtr = (unsigned char*)memchr(jpgStartPtr+1, 0xff, data+size-jpgStartPtr-1);
-        while(jpgEndPtr && ((jpgEndPtr+1) < (data + size))) {
-            if(*(jpgEndPtr + 1) == 0xd9) { /* EOI found */
-                jpgEndPtr += 2;
-                break;
-            } else { /* go on looking (starting at next byte) */
-                jpgEndPtr++;
-                jpgEndPtr = (unsigned char*)memchr(jpgEndPtr, 0xff, data + size - jpgEndPtr);
-            }
-        }
-        if(!jpgEndPtr) { /* no EOI -> no JPEG */
-            // TODO
-        }
-
-        m_data = (char*)jpgStartPtr;
-        m_size = jpgEndPtr-jpgStartPtr;
-
-        qInfo() << jpgStartPtr - data;
-    }
-    /*
-    (char*)jpgStartPtr, jpgEndPtr-jpgStartPtr
-*/
-
-    // 248 qInfo() << sizeof(NikonLiveViewHeader);
-    /*
-    QString str;
-    uint32_t val = 0x11223344;
-    uint32_t val2 = fixBytesOrder(val);
-    str.sprintf("%04x -> %04x", val, val2);
-    qInfo() << str;*/
-//    qInfo() << m_nikonLiveViewData.jpg_width;
-//    qInfo() << m_nikonLiveViewData.width;
-}
-
-GPCameraPreview::GPCameraPreview(const GPCameraPreview &copy)
-{
-    m_cameraFile = copy.m_cameraFile;
-    m_data = copy.m_data;
-    m_size = copy.m_size;
-
-    gp_file_ref(m_cameraFile);
-}
-
-GPCameraPreview::~GPCameraPreview()
-{
-    gp_file_unref(m_cameraFile);
-}
-
-
-const char* GPCameraPreview::data()
-{
-    return m_data;
-}
-
-unsigned long GPCameraPreview::size()
-{
-    return m_size;
-}
-
-CameraPreview::Format GPCameraPreview::format()
-{
-    return CameraPreview::FormatJPG;
-}

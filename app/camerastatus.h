@@ -2,7 +2,6 @@
 #define CAMERASTATUS_H
 
 #include <QString>
-#include <QCoreApplication>
 
 #include "camera.h"
 
