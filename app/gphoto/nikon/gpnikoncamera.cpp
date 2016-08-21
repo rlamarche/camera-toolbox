@@ -77,8 +77,6 @@ bool GPNikonCamera::capturePreview(CameraPreview& cameraPreview)
 
         m_isRecording = nikonLvHeader.movie_recording;
 
-        qInfo() << nikonLvHeader.rolling << nikonLvHeader.yawing << nikonLvHeader.pitching;
-
         return true;
     }
     else
