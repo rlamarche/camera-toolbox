@@ -27,7 +27,11 @@
 
 using namespace hpis;
 
-CameraServer::CameraServer(CameraThread* cameraThread, QObject *parent) : m_cameraThread(cameraThread), m_httpServer(this), QObject(parent)
+CameraServer::CameraServer(CameraThread* cameraThread, QObject *parent) : m_cameraThread(cameraThread), m_httpServer(this),
+    m_pWebSocketServer(new QWebSocketServer(QStringLiteral("Echo Server"),
+                                                QWebSocketServer::NonSecureMode, this)),
+        m_webSocketClients(),
+    QObject(parent)
 {
     m_httpServer.listen(QHostAddress::Any, 8080, [this](qhttp::server::QHttpRequest* req, qhttp::server::QHttpResponse* res) {
         this->processRequest(req, res);
@@ -38,6 +42,12 @@ CameraServer::CameraServer(CameraThread* cameraThread, QObject *parent) : m_came
     }
 
     connect(cameraThread, SIGNAL(previewAvailable(hpis::CameraPreview)), this, SLOT(previewAvailable(hpis::CameraPreview)));
+
+    m_pWebSocketServer->listen(QHostAddress::Any, 8081);
+    connect(m_pWebSocketServer, &QWebSocketServer::newConnection,
+            this, &CameraServer::onNewWebSocketConnection);
+    connect(m_pWebSocketServer, &QWebSocketServer::closed, this, &CameraServer::webSocketClosed);
+
 }
 
 void CameraServer::ctrlSet(QMap<QString, QString> params)
@@ -274,4 +284,60 @@ void CameraServer::previewAvailable(CameraPreview cameraPreview)
     }
     m_previewList.clear();
 
+
+    QList<QWebSocket*>::iterator w;
+    for (w = m_webSocketClients.begin(); w != m_webSocketClients.end(); ++w)
+    {
+        QWebSocket* webSocket = *w;
+        webSocket->sendBinaryMessage(cameraPreview.data());
+    }
+}
+
+
+void CameraServer::onNewWebSocketConnection()
+{
+    QWebSocket *pSocket = m_pWebSocketServer->nextPendingConnection();
+    QString prefix("/api/v1/");
+
+    QString path = pSocket->requestUrl().path();
+    if (path.startsWith(prefix))
+    {
+        new CameraApiV1(m_connectionCounter++, pSocket, m_cameraThread);
+    }
+    else
+    {
+        connect(pSocket, &QWebSocket::textMessageReceived, this, &CameraServer::processTextMessage);
+        connect(pSocket, &QWebSocket::binaryMessageReceived, this, &CameraServer::processBinaryMessage);
+        connect(pSocket, &QWebSocket::disconnected, this, &CameraServer::socketDisconnected);
+
+        m_webSocketClients << pSocket;
+    }
+}
+
+void CameraServer::processTextMessage(QString message)
+{
+    QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
+    qDebug() << "Message received:" << message;
+    if (pClient) {
+        pClient->sendTextMessage(message);
+    }
+}
+
+void CameraServer::processBinaryMessage(QByteArray message)
+{
+    QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
+    qDebug() << "Binary Message received:" << message;
+    if (pClient) {
+        pClient->sendBinaryMessage(message);
+    }
+}
+
+void CameraServer::socketDisconnected()
+{
+    QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
+    qDebug() << "socketDisconnected:" << pClient;
+    if (pClient) {
+        m_webSocketClients.removeAll(pClient);
+        pClient->deleteLater();
+    }
 }

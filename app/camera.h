@@ -19,6 +19,8 @@ class Camera : public QObject
     Q_PROPERTY(QString aperture READ aperture WRITE setAperture)
     Q_PROPERTY(QString shutterSpeed READ shutterSpeed WRITE setShutterSpeed)
     Q_PROPERTY(QString iso READ iso WRITE setIso)
+    Q_PROPERTY(QString focusMode READ focusMode WRITE setFocusMode)
+    Q_PROPERTY(QString focusMetering READ focusMetering WRITE setFocusMetering)
     Q_PROPERTY(bool isoAuto READ isoAuto WRITE setIsoAuto)
 public:
     enum CameraCapability {
@@ -111,6 +113,21 @@ public:
     virtual bool setExposureMode(QString exposureMode) = 0;
     virtual bool exposureModePlus() = 0;
     virtual bool exposureModeMinus() = 0;
+
+    // Focus mode
+    virtual QStringList focusModes() = 0;
+    virtual QString focusMode() = 0;
+    virtual bool setFocusMode(QString focusMode) = 0;
+    virtual bool focusModePlus() = 0;
+    virtual bool focusModeMinus() = 0;
+
+    // Focus metering
+    virtual QStringList focusMeterings() = 0;
+    virtual QString focusMetering() = 0;
+    virtual bool setFocusMetering(QString focusMetering) = 0;
+    virtual bool focusMeteringPlus() = 0;
+    virtual bool focusMeteringMinus() = 0;
+
 
     // Live view zoom ratio
     virtual QString lvZoomRatio() = 0;

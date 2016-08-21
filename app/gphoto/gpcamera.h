@@ -121,6 +121,20 @@ public:
     bool exposureModePlus();
     bool exposureModeMinus();
 
+    // Focus mode
+    QStringList focusModes();
+    QString focusMode();
+    bool setFocusMode(QString focusMode);
+    bool focusModePlus();
+    bool focusModeMinus();
+
+    // Focus metering
+    QStringList focusMeterings();
+    QString focusMetering();
+    bool setFocusMetering(QString focusMetering);
+    bool focusMeteringPlus();
+    bool focusMeteringMinus();
+
     // Live view zoom ratio
     QString lvZoomRatio();
     virtual bool increaseLvZoomRatio() = 0;
@@ -166,19 +180,15 @@ protected:
     virtual QString manufacturerWidgetName();
     virtual QString cameraModelWidgetName();
 
-
     virtual QString viewfinderWidgetName() = 0;
 
     virtual QString apertureWidgetName();
     virtual QString shutterSpeedWidgetName();
     virtual QString isoWidgetName();
 
-    virtual QString afModeWidgetName();
-
     virtual QString exposureModeWidgetName() = 0;
 
     virtual QString afAreaWidgetName();
-    virtual QString afAtWidgetName();
     virtual QString afDriveWidgetName();
 
     virtual QString recordingMediaWidgetName();
@@ -187,6 +197,9 @@ protected:
     virtual QString stillCaptureModeWidgetName();
 
     virtual QString exposureCompensationWidgetName();
+
+    virtual QString focusModeWidgetName();
+    virtual QString focusMeteringWidgetName();
 
     virtual QString programShiftValueWidgetName();
 
@@ -219,6 +232,13 @@ protected:
     virtual bool gpReadProgramShiftValue();
 
     virtual bool gpReadExposureCompensation();
+
+
+    int gpReadRadioWidget(QString widgetName, QStringList& list);
+    int gpWriteRadioWidget(QString widgetName, QStringList& list, QString value);
+    QString valueOrNull(QStringList& list, int index);
+    bool gpIncrementMode(QString widgetName, QStringList list, int index);
+    bool gpDecrementMode(QString widgetName, QStringList list, int index);
 
 
     int m_cameraNumber;
@@ -257,6 +277,12 @@ protected:
 
     QStringList m_exposureModes;
     int m_exposureMode;
+
+    QStringList m_focusModes;
+    int m_focusMode;
+
+    QStringList m_focusMeterings;
+    int m_focusMetering;
 
     QStringList m_lvZoomRatios;
     int m_lvZoomRatio;

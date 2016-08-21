@@ -50,6 +50,11 @@ CameraStatus hpis::Camera::status()
     cs.m_isoAuto = isoAuto();
     cs.m_exposurePreview = exposurePreview();
 
+    cs.m_focusModes = focusModes();
+    cs.m_focusMode = focusMode();
+
+    cs.m_focusMeterings = focusMeterings();
+    cs.m_focusMetering = focusMetering();
 
     return cs;
 }

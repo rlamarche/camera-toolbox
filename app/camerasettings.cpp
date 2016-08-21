@@ -34,6 +34,16 @@ QString CameraSettings::iso()
     return m_iso;
 }
 
+QString CameraSettings::focusMode()
+{
+    return m_focusMode;
+}
+
+QString CameraSettings::focusMetering()
+{
+    return m_focusMetering;
+}
+
 bool CameraSettings::isoAuto()
 {
     return m_isoAuto;
@@ -58,6 +68,8 @@ QJsonObject CameraSettings::toJsonObject()
     status["aperture"] = m_aperture;
     status["shutterSpeed"] = m_shutterSpeed;
     status["iso"] = m_iso;
+    status["focusMode"] = m_focusMode;
+    status["focusMetering"] = m_focusMetering;
 
     return status;
 }
@@ -65,6 +77,12 @@ QJsonObject CameraSettings::toJsonObject()
 CameraSettings CameraSettings::fromJsonObject(QJsonObject jsonObject)
 {
     CameraSettings cameraSettings;
+
+    QJsonValueRef exposureModeRef = jsonObject["exposureMode"];
+    if (exposureModeRef.isString())
+    {
+        cameraSettings.m_exposureMode = exposureModeRef.toString();
+    }
 
     QJsonValueRef apertureRef = jsonObject["aperture"];
     if (apertureRef.isString())
@@ -82,6 +100,18 @@ CameraSettings CameraSettings::fromJsonObject(QJsonObject jsonObject)
     if (isoRef.isString())
     {
         cameraSettings.m_iso = isoRef.toString();
+    }
+
+    QJsonValueRef focusModeRef = jsonObject["focusMode"];
+    if (focusModeRef.isString())
+    {
+        cameraSettings.m_focusMode = focusModeRef.toString();
+    }
+
+    QJsonValueRef focusMeteringRef = jsonObject["focusMetering"];
+    if (focusMeteringRef.isString())
+    {
+        cameraSettings.m_focusMetering = focusMeteringRef.toString();
     }
 
     return cameraSettings;

@@ -75,6 +75,10 @@ bool GPNikonCamera::capturePreview(CameraPreview& cameraPreview)
 
         cameraPreview = CameraPreview(preview, "application/jpeg");
 
+        m_isRecording = nikonLvHeader.movie_recording;
+
+        qInfo() << nikonLvHeader.rolling << nikonLvHeader.yawing << nikonLvHeader.pitching;
+
         return true;
     }
     else
@@ -354,21 +358,6 @@ QString GPNikonCamera::isoAutoWidgetName()
     return "autoiso"; // d054
 }
 
-QString GPCamera::afModeWidgetName()
-{
-    return "liveviewaffocus"; // d061
-}
-
-QString GPCamera::afAreaWidgetName()
-{
-    return "changeafarea"; // 9205
-}
-
-QString GPCamera::afAtWidgetName()
-{
-    return "liveviewafmode"; // d05d
-}
-
 QString GPNikonCamera::exposureModeWidgetName()
 {
     return "expprogram"; // 500e canon : autoexposuremode
@@ -380,6 +369,30 @@ QString GPNikonCamera::liveviewSelectorWidgetName()
     return "d1a6";
 }
 
+QString GPNikonCamera::focusModeWidgetName()
+{
+    if (m_isInLiveView)
+    {
+        return "liveviewaffocus"; // d061
+    }
+    else
+    {
+        return "focusmode2"; // d161
+    }
+}
+
+QString GPNikonCamera::focusMeteringWidgetName()
+{ // d108
+    if (m_isInLiveView)
+    {
+        return "liveviewafmode"; // d05d
+    }
+    else
+    {
+        return "focusmetermode"; // 501c
+    }
+}
+
 QString GPNikonCamera::lvZoomRatioWidgetName()
 {
     return "d1a3";
@@ -389,17 +402,6 @@ QString GPNikonCamera::exposurePreviewWidgetName()
 {
     return "d1a5";
 }
-
-QString GPCamera::stillCaptureModeWidgetName()
-{
-    return "capturemode"; // canon drivemode
-}
-
-QString GPCamera::recordingMediaWidgetName()
-{
-    return "recordingmedia"; // d10b
-}
-
 
 QString GPNikonCamera::exposureCompensationWidgetName()
 {

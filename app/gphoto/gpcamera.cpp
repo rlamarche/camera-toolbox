@@ -47,7 +47,7 @@ GPCamera::~GPCamera()
 
 void GPCamera::reportError(QString error)
 {
-    qWarning() << "Error :" << error;
+    qInfo() << "Error :" << error;
 }
 
 // Camera Infos
@@ -397,6 +397,8 @@ bool GPCamera::readCameraSettings()
     gpReadViewFinder();
     gpReadProgramShiftValue();
     gpReadExposureCompensation();
+    m_focusMode = gpReadRadioWidget(focusModeWidgetName(), m_focusModes);
+    m_focusMetering = gpReadRadioWidget(focusMeteringWidgetName(), m_focusMeterings);
 
     return true;
 }
@@ -638,6 +640,94 @@ bool GPCamera::gpReadExposureCompensation()
     return true;
 }
 
+int GPCamera::gpReadRadioWidget(QString widgetName, QStringList& list)
+{
+    QString current;
+    int value;
+
+    int ret = gpExtractWidgetChoices(widgetName, list);
+    if (ret < GP_OK)
+    {
+        value = -1;
+        return value;
+    }
+
+    ret = gpGetRadioWidgetValue(widgetName, current);
+    if (ret == GP_OK)
+    {
+        value = list.indexOf(current);
+    } else {
+        value = -1;
+        return value;
+    }
+
+    return value;
+}
+
+int GPCamera::gpWriteRadioWidget(QString widgetName, QStringList& list, QString value)
+{
+    int i = list.indexOf(value);
+    if (i == -1)
+    {
+        return i;
+    }
+
+    int ret = gpSetRadioWidget(widgetName, list[i]);
+    if (ret == GP_OK)
+    {
+        return i;
+    } else {
+        return -1;
+    }
+}
+
+
+
+QString GPCamera::valueOrNull(QStringList& list, int index)
+{
+    if (index > -1 && index < list.size())
+    {
+        return list[index];
+    } else {
+        return QString::null;
+    }
+}
+
+bool GPCamera::gpIncrementMode(QString widgetName, QStringList list, int index)
+{
+    if (index < list.length() - 1)
+    {
+        int ret = gpSetRadioWidget(widgetName, list[index + 1]);
+        if (ret == GP_OK)
+        {
+            readCameraSettings();
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+bool GPCamera::gpDecrementMode(QString widgetName, QStringList list, int index)
+{
+    if (index > 0)
+    {
+        int ret = gpSetRadioWidget(widgetName, list[index - 1]);
+        if (ret == GP_OK)
+        {
+            readCameraSettings();
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+
 ////////////////////////////////// GPhoto
 
 int GPCamera::gpGetRangeWidgetInfo(QString widgetName, float* min, float* max, float* increment)
@@ -667,7 +757,7 @@ int GPCamera::gpExtractWidgetChoices(QString widgetName, QStringList& choices)
     CameraWidget* widget;
     choices.clear();
     ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &widget, m_context);
-    if (ret < GP_OK)
+    if (ret != GP_OK || widget == 0x0)
     {
         reportError(QString("Unable to get single config %1: %2").arg(widgetName, errorCodeToString(ret)));
         return ret;
@@ -676,7 +766,7 @@ int GPCamera::gpExtractWidgetChoices(QString widgetName, QStringList& choices)
     const char* choiceLabel;
     int n = gp_widget_count_choices(widget);
     if (n < GP_OK) {
-        reportError(QString("Unable to count widget choices: %1").arg(errorCodeToString(n)));
+        reportError(QString("Unable to count widget choices for %1: %2").arg(widgetName, errorCodeToString(n)));
         return n;
     }
 
@@ -750,7 +840,7 @@ int GPCamera::gpSetRadioWidget(QString widgetName, QString radioValue)
 {
     CameraWidget* widget;
     int ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &widget, m_context);
-    if (ret < GP_OK)
+    if (ret != GP_OK || widget == 0x0)
     {
         reportError(QString("Unable to get single config %1: %2").arg(widgetName, errorCodeToString(ret)));
         return ret;
@@ -838,7 +928,7 @@ int GPCamera::gpGetTextWidgetValue(QString widgetName, QString& value)
 {
     CameraWidget* cameraWidget;
     int ret = gp_camera_get_single_config(m_camera, widgetName.toStdString().c_str(), &cameraWidget, m_context);
-    if (ret < GP_OK)
+    if (ret != GP_OK || cameraWidget == 0x0)
     {
         reportError(QString("Unable to get single config %1: %2").arg(widgetName, errorCodeToString(ret)));
         value = QString::null;
@@ -863,6 +953,11 @@ int GPCamera::gpGetTextWidgetValue(QString widgetName, QString& value)
 QString GPCamera::manufacturerWidgetName()
 {
     return "manufacturer";
+}
+
+QString GPCamera::stillCaptureModeWidgetName()
+{
+    return "capturemode"; // canon drivemode
 }
 
 QString GPCamera::cameraModelWidgetName()
@@ -902,6 +997,21 @@ QString GPCamera::exposureCompensationWidgetName()
     return "exposurecompensation";
 }
 
+QString GPCamera::focusModeWidgetName()
+{
+    return "focusmode"; // 500a
+}
+
+QString GPCamera::focusMeteringWidgetName()
+{
+    return "focusmetermode"; // 501c
+}
+
+QString GPCamera::afAreaWidgetName()
+{
+    return "changeafarea"; // 9205
+}
+
 QString GPCamera::programShiftValueWidgetName()
 {
     return "flexibleprogram"; // d109
@@ -910,6 +1020,11 @@ QString GPCamera::programShiftValueWidgetName()
 QString GPCamera::exposureIndicatorWidgetName()
 {
     return "lightmeter"; // d1b1
+}
+
+QString GPCamera::recordingMediaWidgetName()
+{
+    return "recordingmedia"; // d10b
 }
 
 ////////////////////////////////////// Camera control
@@ -1279,6 +1394,108 @@ bool GPCamera::exposureModeMinus()
     }
 }
 
+// Focus mode
+
+QStringList GPCamera::focusModes()
+{
+    return m_focusModes;
+}
+
+QString GPCamera::focusMode()
+{
+    return valueOrNull(m_focusModes, m_focusMode);
+}
+
+bool GPCamera::setFocusMode(QString focusMode)
+{
+    if (int i = gpWriteRadioWidget(focusModeWidgetName(), m_focusModes, focusMode) > -1)
+    {
+        m_focusMode = i;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool GPCamera::focusModePlus()
+{
+    if (gpIncrementMode(focusModeWidgetName(), m_focusModes, m_focusMode))
+    {
+        m_focusMode ++;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool GPCamera::focusModeMinus()
+{
+    if (gpDecrementMode(focusModeWidgetName(), m_focusModes, m_focusMode))
+    {
+        m_focusMode --;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+// Focus metering
+
+QStringList GPCamera::focusMeterings()
+{
+    return m_focusMeterings;
+}
+
+QString GPCamera::focusMetering()
+{
+    return valueOrNull(m_focusMeterings, m_focusMetering);
+}
+
+bool GPCamera::setFocusMetering(QString focusMetering)
+{
+    if (int i = gpWriteRadioWidget(focusMeteringWidgetName(), m_focusMeterings, focusMetering) > -1)
+    {
+        m_focusMetering = i;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool GPCamera::focusMeteringPlus()
+{
+    if (gpIncrementMode(focusMeteringWidgetName(), m_focusMeterings, m_focusMetering))
+    {
+        m_focusMetering ++;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool GPCamera::focusMeteringMinus()
+{
+    if (gpDecrementMode(focusMeteringWidgetName(), m_focusMeterings, m_focusMetering))
+    {
+        m_focusMetering --;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 // Live view zoom ratio
 
 QString GPCamera::lvZoomRatio()
@@ -1312,8 +1529,6 @@ bool GPCamera::afDrive()
 bool GPCamera::changeAfArea(int x, int y)
 {
     int ret;
-    //setRadioWidget(afAtWidgetName(), "3");
-    //setRadioWidget(afModeWidgetName(), "0");
 
     QString textValue = QString().sprintf("%dx%d", x * 7360 / 640, y * 4912 / 426);
     ret = gpSetTextWidget(afAreaWidgetName(), textValue);

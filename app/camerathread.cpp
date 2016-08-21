@@ -220,6 +220,10 @@ CameraInfo CameraThread::cameraInfo()
 
 void CameraThread::setCameraSettings(CameraSettings cameraSettings)
 {
+    if (!cameraSettings.exposureMode().isNull())
+    {
+        executeCommand(Command::setProperty("exposureMode", cameraSettings.exposureMode()));
+    }
     if (!cameraSettings.aperture().isNull())
     {
         executeCommand(Command::setProperty("aperture", cameraSettings.aperture()));
@@ -231,6 +235,14 @@ void CameraThread::setCameraSettings(CameraSettings cameraSettings)
     if (!cameraSettings.iso().isNull())
     {
         executeCommand(Command::setProperty("iso", cameraSettings.iso()));
+    }
+    if (!cameraSettings.focusMode().isNull())
+    {
+        executeCommand(Command::setProperty("focusMode", cameraSettings.focusMode()));
+    }
+    if (!cameraSettings.focusMetering().isNull())
+    {
+        executeCommand(Command::setProperty("focusMetering", cameraSettings.focusMetering()));
     }
 }
 

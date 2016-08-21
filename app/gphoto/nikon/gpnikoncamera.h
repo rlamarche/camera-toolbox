@@ -45,6 +45,8 @@ protected:
     virtual QString exposureModeWidgetName();
     virtual QString captureModeWidgetName();
     virtual QString liveviewSelectorWidgetName();
+    virtual QString focusModeWidgetName();
+    virtual QString focusMeteringWidgetName();
     virtual QString lvZoomRatioWidgetName();
     virtual QString isoAutoWidgetName();
 

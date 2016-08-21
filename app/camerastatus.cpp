@@ -73,6 +73,16 @@ QString CameraStatus::iso()
     return m_iso;
 }
 
+QList<QString> CameraStatus::focusModes()
+{
+    return m_focusModes;
+}
+
+QString CameraStatus::focusMode()
+{
+    return m_focusMode;
+}
+
 bool CameraStatus::isoAuto()
 {
     return m_isoAuto;
@@ -112,6 +122,12 @@ QJsonObject CameraStatus::toJsonObject()
 
     status["isos"] = QJsonArray::fromStringList(m_isos);
     status["iso"] = m_iso;
+
+    status["focusModes"] = QJsonArray::fromStringList(m_focusModes);
+    status["focusMode"] = m_focusMode;
+
+    status["focusMeterings"] = QJsonArray::fromStringList(m_focusMeterings);
+    status["focusMetering"] = m_focusMetering;
 
     return status;
 }

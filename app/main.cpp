@@ -85,7 +85,6 @@ debug_func (GPLogLevel level, const char *domain, const char *str, void *data)
 int
 debug_action (const char *debug_loglevel, const char *debug_logfile_name)
 {
-    int n;
     FILE *logfile = NULL;
     GPLogLevel loglevel = GP_LOG_ALL;
 

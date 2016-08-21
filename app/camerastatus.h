@@ -30,6 +30,12 @@ public:
     QList<QString> isos();
     QString iso();
 
+    QList<QString> focusModes();
+    QString focusMode();
+
+    QList<QString> focusMeterings();
+    QString focusMetering();
+
     bool isoAuto();
     bool exposurePreview();
 
@@ -52,6 +58,12 @@ private:
 
     QList<QString> m_isos;
     QString m_iso;
+
+    QList<QString> m_focusModes;
+    QString m_focusMode;
+
+    QList<QString> m_focusMeterings;
+    QString m_focusMetering;
 
     bool m_isoAuto;
     bool m_exposurePreview;

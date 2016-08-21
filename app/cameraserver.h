@@ -14,6 +14,8 @@
 #include <QList>
 #include <QMutex>
 
+#include <QWebSocket>
+#include <QWebSocketServer>
 
 namespace hpis {
 
@@ -44,11 +46,21 @@ private:
     QList<qhttp::server::QHttpResponse*> m_previewList;
     quint64 m_connectionCounter = 0;
 
+    QWebSocketServer *m_pWebSocketServer;
+    QList<QWebSocket *> m_webSocketClients;
+
 signals:
+    void webSocketClosed();
 
 public slots:
     void responseDestroyed(QObject* resp);
     void previewAvailable(hpis::CameraPreview cameraPreview);
+
+private slots:
+    void onNewWebSocketConnection();
+    void processTextMessage(QString message);
+    void processBinaryMessage(QByteArray message);
+    void socketDisconnected();
 };
 
 }
