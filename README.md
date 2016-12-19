@@ -1,5 +1,13 @@
 # Camera Toolbox
 
+## NEW
+
+See :
+
+* https://github.com/rlamarche/camera-client-android
+* https://github.com/rlamarche/camera-toolbox-buildroot
+* https://github.com/rlamarche/camera-toolbox-images
+
 ## Introduction
 
 Camera Toolbox is a multi-plaform, Qt-based, toolbox for controlling camera remotely through an API, a keyboard, a HTML5 web application, a mobile application, a REST API, and so on.
