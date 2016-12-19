@@ -1,0 +1,210 @@
+# this is an example of the Uber API
+# as a demonstration of an API spec in YAML
+swagger: '2.0'
+info:
+  title: Camera Toolbox API
+  description: Control any camera from unified API
+  version: "1.0.0"
+# the domain of the service
+host: 172.24.1.1:8080
+# array of all schemes that your API supports
+schemes:
+  - http
+# will be prefixed to all paths
+basePath: /api/v1
+produces:
+  - application/json
+paths:
+  /info:
+    get:
+      summary: Camera info
+      description: |
+        Return information about the camera
+      tags:
+        - Camera
+      responses:
+        200:
+          description: A camera info
+          schema:
+            $ref: '#/definitions/CameraInfo'
+            
+  /status:
+    get:
+      summary: Camera status
+      description: |
+        Return the camera status
+      tags:
+        - Camera
+      responses:
+        200:
+          description: A camera status
+          schema:
+            $ref: '#/definitions/CameraStatus'
+  /settings:
+    post:
+      summary: Set camera settings
+      description: Allow to set camera settings
+      tags:
+        - Camera
+      parameters:
+        - in: body
+          name: body
+          description: order placed for purchasing the pet
+          required: false
+          schema:
+            $ref: "#/definitions/CameraSettings"
+      responses:
+        200:
+          description: OK
+          
+  /capture/photo:
+    post:
+      summary: Capture a photo
+      tags:
+        - Camera
+      responses:
+        200:
+          description: OK
+          
+  /capture/start:
+    post:
+      summary: Start recording a movie
+      tags:
+        - Camera
+      responses:
+        200:
+          description: OK
+          
+  /capture/stop:
+    post:
+      summary: Stop recording a movie
+      tags:
+        - Camera
+      responses:
+        200:
+          description: OK
+
+  /autofocus:
+    post:
+      summary: Activate autofocus on specified area (coordinates)
+      tags:
+        - Camera
+      parameters:
+        - name: x
+          in: query
+          type: integer
+          required: true
+        - name: y
+          in: query
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+
+definitions:
+  CameraInfo:
+    type: object
+    properties:
+      displayName:
+        type: string
+        description: The name of the camera.
+      manufacturer:
+        type: string
+        description: The manufacturer of the camera.
+      cameraModel:
+        type: string
+        description: The camera model.
+        
+  CameraStatus:
+    type: object
+    properties:
+      captureMode:
+        type: integer
+        description: capture mode (0 = photo, 1 = video)
+      aperture:
+        type: string
+        description: The current aperture
+      apertures:
+        type: array
+        items:
+          type: string
+        description: available apertures
+      exposureMode:
+        type: string
+        description: The current exposure mode
+      exposureModes:
+        type: array
+        items:
+          type: string
+        description: available exposure modes
+      focusMetering:
+        type: string
+        description: The current focus metering
+      focusMeterings:
+        type: array
+        items:
+          type: string
+        description: available focus meterings
+      focusMode:
+        type: string
+        description: The current focus mode
+      focusModes:
+        type: array
+        items:
+          type: string
+        description: available focus modes
+      iso:
+        type: string
+        description: The current ISO
+      isos:
+        type: array
+        items:
+          type: string
+        description: available ISO
+      isoAuto:
+        type: boolean
+        description: tell whether iso auto is enabled
+      shutterSpeed:
+        type: string
+        description: The current shutter speed
+      shutterSpeeds:
+        type: array
+        items:
+          type: string
+        description: available shutter speeds
+      isInLiveView:
+        type: boolean
+        description: tell whether the camera is in live view mode
+      isRecording:
+        type: boolean
+        description: tell whether the camera is currently recording or not
+      
+
+  CameraSettings:
+    type: object
+    properties:
+      captureMode:
+        type: integer
+        description: capture mode (0 = photo, 1 = video)
+      exposureMode:
+        type: string
+        description: The exposure mode to set
+      aperture:
+        type: string
+        description: The aperture to set
+      shutterSpeed:
+        type: string
+        description: The shutterspeed to set
+      iso:
+        type: string
+        description: The iso sensitivity to set
+      isoAuto:
+        type: boolean
+        description: Set to true to activate auto iso
+      focusMetering:
+        type: string
+        description: The current focus metering
+      focusMode:
+        type: string
+        description: The current focus mode
