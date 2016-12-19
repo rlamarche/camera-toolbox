@@ -27,7 +27,8 @@ SOURCES += \
     api/cameraapiv1.cpp \
     camerainfo.cpp \
     camerasettings.cpp \
-    gphoto/nikon/gpnikoncamera.cpp
+    gphoto/nikon/gpnikoncamera.cpp \
+    camerafile.cpp
 
 
 
@@ -46,14 +47,17 @@ HEADERS  += mainwindow.h \
     api/cameraapiv1.h \
     camerainfo.h \
     camerasettings.h \
-    gphoto/nikon/gpnikoncamera.h
+    gphoto/nikon/gpnikoncamera.h \
+    camerafile.h
 
 
-INCLUDEPATH += ../vendor/libgphoto2 ../vendor/libgphoto2/libgphoto2_port ../vendor/qhttp/src
+#INCLUDEPATH += ../vendor/libgphoto2 ../vendor/libgphoto2/libgphoto2_port ../vendor/qhttp/src
+INCLUDEPATH += ../vendor/qhttp/src
 #LIBS     += -lgphoto2_port -lgphoto2
 LIBS += \
-        -L../libgphoto2 -llibgphoto2 \
-        -L../libgphoto2_port -llibgphoto2_port \
+        -lgphoto2 -lgphoto2_port \
+#        -L../libgphoto2 -llibgphoto2 \
+#        -L../libgphoto2_port -llibgphoto2_port \
         -L../vendor/qhttp/xbin -lqhttp \
         -lltdl -lexif
 

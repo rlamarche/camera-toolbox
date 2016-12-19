@@ -4,6 +4,8 @@
 #include <QObject>
 
 #include "camerapreview.h"
+#include "camerafile.h"
+
 //#include "camerastatus.h"
 
 namespace hpis {
@@ -47,6 +49,9 @@ public:
 
     explicit Camera(QObject *parent = 0);
     virtual ~Camera() {};
+
+    // Idle time
+    virtual void idle(int timeout) = 0;
 
     // Info
     virtual QString displayName() = 0;
@@ -154,6 +159,7 @@ public:
     CameraStatus status();
     CameraInfo info();
 signals:
+    void cameraFileAvailable(hpis::CameraFile cameraFile);
 
 public slots:
 };

@@ -71,6 +71,25 @@ void CameraApiV1::processRequest()
 
             response = success();
         }
+        else if (path == "/capture/photo" && m_req->method() == qhttp::EHTTP_POST)
+        {
+            m_cameraThread->executeCommand(CameraThread::CommandCapturePhoto);
+        }
+        else if (path == "/capture/start" && m_req->method() == qhttp::EHTTP_POST)
+        {
+            m_cameraThread->executeCommand(CameraThread::CommandStartMovie);
+        }
+        else if (path == "/capture/stop" && m_req->method() == qhttp::EHTTP_POST)
+        {
+            m_cameraThread->executeCommand(CameraThread::CommandStopMovie);
+        }
+        else if (path == "/autofocus" && m_req->method() == qhttp::EHTTP_POST)
+        {
+            QString xStr = params["x"];
+            QString yStr = params["y"];
+
+            m_cameraThread->executeCommand(CameraThread::Command::changeAfArea(xStr.toInt(), yStr.toInt()));
+        }
         else if (path == "/liveview.mjpg")
         {
             endResponse = false;
@@ -109,6 +128,8 @@ void CameraApiV1::processRequest()
             m_res->setStatusCode(qhttp::ESTATUS_OK);      // status 200
             m_res->addHeader("connection", "close");      // it's the default header, this line can be omitted.
             m_res->addHeader("Content-Type", "application/json");
+            m_res->addHeader("Access-Control-Allow-Origin", "editor.swagger.io");
+            m_res->addHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
             m_res->end(response.toJson());
         }
     });

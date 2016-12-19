@@ -37,10 +37,11 @@ LIBS += \
 #        -lltdl -lexif
 
 DEFINES += \
-        LOCALEDIR=\\\"locale\\\" \
-        CAMLIBS=\\\"camlibs\\\" \
-        IOLIBS=\\\"iolibs\\\" \
         _GPHOTO2_INTERNAL_CODE \
+#        LOCALEDIR=\\\"locale\\\" \
+#        CAMLIBS=\\\"camlibs\\\" \
+#        IOLIBS=\\\"iolibs\\\" \
+
 
 target.path = /home/pi/camlibs
 INSTALLS += target

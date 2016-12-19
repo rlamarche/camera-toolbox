@@ -122,6 +122,7 @@ QJsonObject CameraStatus::toJsonObject()
 
     status["isos"] = QJsonArray::fromStringList(m_isos);
     status["iso"] = m_iso;
+    status["isoAuto"] = m_isoAuto;
 
     status["focusModes"] = QJsonArray::fromStringList(m_focusModes);
     status["focusMode"] = m_focusMode;

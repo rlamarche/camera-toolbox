@@ -125,7 +125,8 @@ private:
     CameraInfo m_cameraInfo;
 
 
-    int refreshTimeoutMs;
+    int m_refreshTimeoutMs;
+    int m_liveviewFps;
 
 
     // Thread synchronization

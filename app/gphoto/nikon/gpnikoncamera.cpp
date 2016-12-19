@@ -44,7 +44,7 @@ bool GPNikonCamera::capturePreview(CameraPreview& cameraPreview)
 {
     if (m_cameraModel == CAMERA_NIKON_D800)
     {
-        CameraFile *file;
+        ::CameraFile *file;
 
         int ret = gp_file_new(&file);
         if (ret < GP_OK) {
@@ -65,17 +65,18 @@ bool GPNikonCamera::capturePreview(CameraPreview& cameraPreview)
         gp_file_get_data_and_size(file, &dataPtr, &dataSize);
 
 
-        NikonLiveViewHeader nikonLvHeader = *((NikonLiveViewHeader*) dataPtr);
-        fixBytesOrder(&nikonLvHeader);
+        //NikonLiveViewHeader nikonLvHeader = *((NikonLiveViewHeader*) dataPtr);
+        //fixBytesOrder(&nikonLvHeader);
         // TODO do something with this liveview header !
 
 
-        dataPtr = dataPtr + 384;
-        QByteArray preview(dataPtr, dataSize - 384);
+        //dataPtr = dataPtr + 384;
+        QByteArray preview(dataPtr, dataSize);
+        gp_file_free(file);
 
         cameraPreview = CameraPreview(preview, "application/jpeg");
 
-        m_isRecording = nikonLvHeader.movie_recording;
+        //m_isRecording = nikonLvHeader.movie_recording;
 
         return true;
     }

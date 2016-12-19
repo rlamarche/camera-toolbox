@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
 */
 
 
-    debug_action(NULL, "out.log");
+    //debug_action(NULL, "out.log");
 
     QApplication a(argc, argv);
     catchUnixSignals({SIGQUIT, SIGINT, SIGTERM, SIGHUP});
@@ -276,6 +276,7 @@ int main(int argc, char *argv[])
         hpis::CameraServer cameraServer(&cameraThread);
 
         cameraThread.start();
+        cameraThread.executeCommand(CameraThread::CommandStartLiveview);
 
         w.show();
 

@@ -104,7 +104,8 @@ CameraThread::Command CameraThread::Command::setProperty(QString propertyName, Q
 CameraThread::CameraThread(Camera* camera, QObject *parent) : QThread(parent),
     m_camera(camera), m_stop(false), m_decoderThread(0)
 {
-    refreshTimeoutMs = 1000;
+    m_refreshTimeoutMs = 1000;
+    m_liveviewFps = 25;
 }
 
 
@@ -136,7 +137,9 @@ void CameraThread::run()
 
     Command command;
     QTime time;
+    QTime previewTime;
     time.start();
+    previewTime.start();
     int timeout;
 
     CameraStatus currentCameraStatus = m_camera->status();
@@ -147,8 +150,10 @@ void CameraThread::run()
 
     emit cameraStatusAvailable(currentCameraStatus);
 
+    int fpsTimeout = 1000 / m_liveviewFps;
+
     while (!m_stop) {
-        if (time.elapsed() > refreshTimeoutMs)
+        if (time.elapsed() > m_refreshTimeoutMs)
         {
             time.restart();
             m_camera->readCameraSettings();
@@ -170,9 +175,15 @@ void CameraThread::run()
         }*/
 
         if (!m_stop && currentCameraStatus.isInLiveView()) {
-            doCapturePreview();
+            // limit to 25 FPS (1/25 = 0.04)
+            if (previewTime.elapsed() > fpsTimeout) {
+                previewTime.restart();
+                doCapturePreview();
+            } else {
+                m_camera->idle(fpsTimeout - previewTime.elapsed());
+            }
         } else if (m_commandQueue.isEmpty()) {
-            timeout = refreshTimeoutMs - time.elapsed();
+            timeout = m_refreshTimeoutMs - time.elapsed();
             if (timeout > 0) {
                 m_mutex.lock();
                 m_condition.wait(&m_mutex, timeout);
@@ -220,6 +231,13 @@ CameraInfo CameraThread::cameraInfo()
 
 void CameraThread::setCameraSettings(CameraSettings cameraSettings)
 {
+    if (cameraSettings.captureMode() == Camera::CaptureModePhoto) {
+        executeCommand(CommandType::CommandPhotoMode);
+    }
+    if (cameraSettings.captureMode() == Camera::CaptureModeVideo) {
+        executeCommand(CommandType::CommandVideoMode);
+    }
+
     if (!cameraSettings.exposureMode().isNull())
     {
         executeCommand(Command::setProperty("exposureMode", cameraSettings.exposureMode()));
@@ -234,7 +252,10 @@ void CameraThread::setCameraSettings(CameraSettings cameraSettings)
     }
     if (!cameraSettings.iso().isNull())
     {
+        executeCommand(CommandType::CommandDisableIsoAuto);
         executeCommand(Command::setProperty("iso", cameraSettings.iso()));
+    } else if (cameraSettings.isoAuto()) {
+        executeCommand(CommandType::CommandEnableIsoAuto);
     }
     if (!cameraSettings.focusMode().isNull())
     {

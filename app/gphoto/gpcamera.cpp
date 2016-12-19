@@ -19,6 +19,7 @@
 #include "gpcamera.h"
 
 #include <QDebug>
+#include <QTime>
 
 using namespace hpis;
 
@@ -64,6 +65,65 @@ QString GPCamera::manufacturer()
 QString GPCamera::cameraModel()
 {
     return m_cameraModel;
+}
+
+// Idle
+void GPCamera::idle(int timeout)
+{
+    QTime time;
+    CameraEventType	evtype;
+    void* data;
+    CameraFilePath *camera_file_path;
+    int timeElapsed = 0;
+
+    time.start();
+
+    while (timeElapsed < timeout) {
+        int ret = gp_camera_wait_for_event(m_camera, timeout - timeElapsed, &evtype, &data, m_context);
+        if (ret < GP_OK) {
+            reportError(QString("Unable to get next event: %1").arg(errorCodeToString(ret)));
+        }
+
+        switch (evtype) {
+        case GP_EVENT_CAPTURE_COMPLETE:
+            qDebug() << "Idle event: Capture complete";
+            /*
+            captureComplete = true;
+            if (fileAdded)
+            {
+                qDebug() << "Event: Capture complete";
+            } else {
+                qDebug() << "Event: Capture failure";
+                if (data != NULL)
+                {
+                    qDebug() << "Data :" << (char*) data;
+                }
+            }*/
+            break;
+        case GP_EVENT_UNKNOWN:
+            qDebug() << "Idle event: Unknown";
+            if (data != NULL)
+            {
+                qDebug() << "Unknown data:" << (char*) data;
+            }
+            break;
+        case GP_EVENT_TIMEOUT:
+            // qDebug() << "Idle event: Timeout";
+            break;
+        case GP_EVENT_FOLDER_ADDED:
+            qDebug() << "Idle event: Folder added";
+            break;
+        case GP_EVENT_FILE_ADDED:
+            qDebug() << "Idle event: File added";
+            //fileAdded = true;
+            camera_file_path = (CameraFilePath*) data;
+            fprintf (stderr, "File %s / %s added to queue.\n", camera_file_path->folder, camera_file_path->name);
+            emit(cameraFileAvailable(hpis::CameraFile(QString(camera_file_path->folder), QString(camera_file_path->name))));
+
+            break;
+        }
+        timeElapsed = time.elapsed();
+    }
 }
 
 // Camera Init
@@ -156,7 +216,7 @@ void GPCamera::shutdown()
 // Capture preview
 bool GPCamera::capturePreview(CameraPreview& cameraPreview)
 {
-    CameraFile *file;
+    ::CameraFile *file;
 
     int ret = gp_file_new(&file);
     if (ret < GP_OK) {
@@ -263,7 +323,7 @@ bool GPCamera::isRecording()
 
 bool GPCamera::capturePhoto()
 {
-    //CameraFilePath camera_file_path;
+    CameraFilePath *camera_file_path;
     CameraEventType	evtype;
     void* data;
 
@@ -283,6 +343,7 @@ bool GPCamera::capturePhoto()
 
     //return true;
 
+    /*
     bool captureComplete = false;
     bool fileAdded = false;
 
@@ -324,26 +385,16 @@ bool GPCamera::capturePhoto()
         case GP_EVENT_FILE_ADDED:
             qDebug() << "Event: File added";
             fileAdded = true;
+            camera_file_path = (CameraFilePath*) data;
 
-            /*
-            fprintf (stderr, "File %s / %s added to queue.\n", path->folder, path->name);
-            if (nrofqueue) {
-                struct queue_entry *q;
-                q = realloc(queue, sizeof(struct queue_entry)*(nrofqueue+1));
-                if (!q) return GP_ERROR_NO_MEMORY;
-                queue = q;
-            } else {
-                queue = malloc (sizeof(struct queue_entry));
-                if (!queue) return GP_ERROR_NO_MEMORY;
-            }
-            memcpy (&queue[nrofqueue].path, path, sizeof(CameraFilePath));
-            queue[nrofqueue].offset = 0;
-            nrofqueue++;*/
+            fprintf (stderr, "File %s / %s added to queue.\n", camera_file_path->folder, camera_file_path->name);
+            emit(cameraFileAvailable(hpis::CameraFile(QString(camera_file_path->folder), QString(camera_file_path->name))));
+
             break;
         }
     }
 
-
+*/
 
     return true;
 }

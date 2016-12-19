@@ -26,10 +26,10 @@ LIBS += -lusb-1.0 \
         -L../../libgphoto2_port -llibgphoto2_port \
 
 DEFINES += \
+        _GPHOTO2_INTERNAL_CODE \
 #        LOCALEDIR=\\\"locale\\\" \
 #        CAMLIBS=\\\"camlibs\\\" \
 #        IOLIBS=\\\"iolibs\\\" \
-        _GPHOTO2_INTERNAL_CODE \
 
 target.path = /home/pi/iolibs
 INSTALLS += target
