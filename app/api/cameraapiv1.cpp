@@ -14,6 +14,8 @@ using namespace hpis;
 CameraApiV1::CameraApiV1(quint64 id, qhttp::server::QHttpRequest* req, qhttp::server::QHttpResponse* res, CameraThread* cameraThread) : m_connectionId(id), m_req(req), m_res(res), m_cameraThread(cameraThread), QObject(req)
 {
     m_isWebSocketRequest = false;
+    connect(m_res, SIGNAL(allBytesWritten()), this, SLOT(onAllBytesWritten()));
+
     processRequest();
 }
 
@@ -22,6 +24,12 @@ CameraApiV1::CameraApiV1(quint64 id, QWebSocket *pWebSocket, CameraThread* camer
     m_isWebSocketRequest = true;
     processWebSocket();
 }
+
+void CameraApiV1::onAllBytesWritten()
+{
+    m_allBytesWritten = true;
+}
+
 
 void CameraApiV1::processRequest()
 {
@@ -70,6 +78,14 @@ void CameraApiV1::processRequest()
             m_cameraThread->setCameraSettings(cameraSettings);
 
             response = success();
+        }
+        else if (path == "/liveview/start" && m_req->method() == qhttp::EHTTP_POST)
+        {
+            m_cameraThread->executeCommand(CameraThread::CommandStartLiveview);
+        }
+        else if (path == "/liveview/stop" && m_req->method() == qhttp::EHTTP_POST)
+        {
+            m_cameraThread->executeCommand(CameraThread::CommandStopLiveview);
         }
         else if (path == "/capture/photo" && m_req->method() == qhttp::EHTTP_POST)
         {
@@ -147,6 +163,10 @@ void CameraApiV1::processWebSocket()
     {
         connect(m_cameraThread, SIGNAL(previewAvailable(hpis::CameraPreview)), this, SLOT(previewAvailable(hpis::CameraPreview)));
     }
+    else if (path == "/status")
+    {
+        connect(m_cameraThread, SIGNAL(cameraStatusAvailable(hpis::CameraStatus)), this, SLOT(cameraStatusAvailable(hpis::CameraStatus)));
+    }
 
 }
 
@@ -162,14 +182,23 @@ void CameraApiV1::previewAvailable(CameraPreview cameraPreview)
         {
             m_res->end(cameraPreview.data());
         }
-        else
+        else if (m_allBytesWritten)
         {
             m_res->write(QString("--jpgboundary").toLocal8Bit());
             m_res->write(QString("Content-Type: image/jpeg\r\n").toLocal8Bit());
             m_res->write(QString("Content-length: %1\r\n").arg(cameraPreview.data().size()).toLocal8Bit());
             m_res->write(QString("\r\n").toLocal8Bit());
             m_res->write(cameraPreview.data());
+            m_allBytesWritten = false;
         }
+    }
+}
+
+void CameraApiV1::cameraStatusAvailable(CameraStatus cameraStatus)
+{
+    if (m_isWebSocketRequest)
+    {
+        m_pWebSocket->sendTextMessage(QString(QJsonDocument(cameraStatus.toJsonObject()).toJson()));
     }
 }
 

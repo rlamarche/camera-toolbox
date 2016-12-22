@@ -74,7 +74,7 @@ bool GPNikonCamera::capturePreview(CameraPreview& cameraPreview)
         QByteArray preview(dataPtr, dataSize);
         gp_file_free(file);
 
-        cameraPreview = CameraPreview(preview, "application/jpeg");
+        cameraPreview = CameraPreview(preview, "image/jpeg");
 
         //m_isRecording = nikonLvHeader.movie_recording;
 

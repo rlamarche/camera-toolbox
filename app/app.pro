@@ -8,7 +8,7 @@ QT       += core gui network websockets #declarative
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = hpis
+TARGET = camera-toolbox
 TEMPLATE = app
 
 SOURCES += \
@@ -117,6 +117,7 @@ defined(USE_RPI) {
 
 }
 
-target.path = /home/pi
+target.path = /usr/local/bin
+
 INSTALLS += target
 

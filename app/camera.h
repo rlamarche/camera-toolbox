@@ -51,7 +51,7 @@ public:
     virtual ~Camera() {};
 
     // Idle time
-    virtual void idle(int timeout) = 0;
+    virtual bool idle(int timeout) = 0;
 
     // Info
     virtual QString displayName() = 0;

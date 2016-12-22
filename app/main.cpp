@@ -60,6 +60,8 @@
 #include <qhttpserverrequest.hpp>
 #include <qhttpserverresponse.hpp>
 
+hpis::CameraThread* cameraThreadPtr;
+
 
 /* time zero for debug log time stamps */
 static struct timeval glob_tv_zero = { 0, 0 };
@@ -183,6 +185,10 @@ void catchUnixSignals(const std::vector<int>& quitSignals,
     auto handler = [](int sig) ->void {
         printf("\nquit the application (user request signal = %d).\n", sig);
         QCoreApplication::quit();
+        if (cameraThreadPtr != NULL) {
+            cameraThreadPtr->stop();
+            cameraThreadPtr->wait();
+        }
     };
 
     // all these signals will be ignored.
@@ -197,6 +203,7 @@ void catchUnixSignals(const std::vector<int>& quitSignals,
 
 int main(int argc, char *argv[])
 {
+    cameraThreadPtr = NULL;
     qRegisterMetaType<hpis::CameraStatus>();
     qRegisterMetaType<hpis::CameraPreview>();
 
@@ -276,7 +283,9 @@ int main(int argc, char *argv[])
         hpis::CameraServer cameraServer(&cameraThread);
 
         cameraThread.start();
-        cameraThread.executeCommand(CameraThread::CommandStartLiveview);
+        cameraThreadPtr = &cameraThread;
+
+        //cameraThread.executeCommand(CameraThread::CommandStartLiveview);
 
         w.show();
 

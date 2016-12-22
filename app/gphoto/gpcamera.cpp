@@ -68,18 +68,21 @@ QString GPCamera::cameraModel()
 }
 
 // Idle
-void GPCamera::idle(int timeout)
+bool GPCamera::idle(int timeout)
 {
+    bool statusChanged = false;
     QTime time;
     CameraEventType	evtype;
     void* data;
     CameraFilePath *camera_file_path;
     int timeElapsed = 0;
+    bool stop = false;
 
     time.start();
 
-    while (timeElapsed < timeout) {
-        int ret = gp_camera_wait_for_event(m_camera, timeout - timeElapsed, &evtype, &data, m_context);
+    while ((timeElapsed < timeout || timeout == 0) && !stop) {
+        int ret = gp_camera_wait_for_event(m_camera, timeout == 0 ? 0 : timeout - timeElapsed, &evtype, &data, m_context);
+
         if (ret < GP_OK) {
             reportError(QString("Unable to get next event: %1").arg(errorCodeToString(ret)));
         }
@@ -105,6 +108,13 @@ void GPCamera::idle(int timeout)
             if (data != NULL)
             {
                 qDebug() << "Unknown data:" << (char*) data;
+
+                QString msg((char*) data);
+                if (msg.startsWith("PTP Property"))
+                {
+                    readCameraSettings();
+                    statusChanged = true;
+                }
             }
             break;
         case GP_EVENT_TIMEOUT:
@@ -123,7 +133,13 @@ void GPCamera::idle(int timeout)
             break;
         }
         timeElapsed = time.elapsed();
+        if (timeout == 0)
+        {
+            stop = true;
+        }
     }
+
+    return statusChanged;
 }
 
 // Camera Init
@@ -242,6 +258,20 @@ bool GPCamera::capturePreview(CameraPreview& cameraPreview)
     data = (unsigned char*) dataPtr;
     size = (uint32_t) dataSize;
 
+
+
+    QByteArray preview((char*)dataPtr, dataSize);
+
+    cameraPreview = CameraPreview(preview, QString("image/jpeg"));
+    gp_file_free(file);
+
+    return true;
+
+
+    // The following code is in case I desactivate the search of jpeg header in libgphoto2
+
+
+
     // BEGIN CODE FROM camlibs/ptp2/library.c
 
     /* look for the JPEG SOI marker (0xFFD8) in data */
@@ -279,9 +309,9 @@ bool GPCamera::capturePreview(CameraPreview& cameraPreview)
 
     // END CODE FROM camlibs/ptp2/library.c
 
-    QByteArray preview((char*)jpgStartPtr, jpgEndPtr-jpgStartPtr);
+    QByteArray preview2((char*)jpgStartPtr, jpgEndPtr-jpgStartPtr);
 
-    cameraPreview = CameraPreview(preview, QString("application/jpeg"));
+    cameraPreview = CameraPreview(preview2, QString("image/jpeg"));
     gp_file_free(file);
 
     return true;

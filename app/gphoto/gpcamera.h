@@ -46,7 +46,7 @@ public:
     QString manufacturer();
     QString cameraModel();
 
-    void idle(int timeout);
+    bool idle(int timeout);
 
     // Init / Shutdown / Read
     bool init();

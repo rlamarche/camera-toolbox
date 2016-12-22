@@ -104,7 +104,7 @@ CameraThread::Command CameraThread::Command::setProperty(QString propertyName, Q
 CameraThread::CameraThread(Camera* camera, QObject *parent) : QThread(parent),
     m_camera(camera), m_stop(false), m_decoderThread(0)
 {
-    m_refreshTimeoutMs = 1000;
+    m_refreshTimeoutMs = 500;
     m_liveviewFps = 25;
 }
 
@@ -153,6 +153,7 @@ void CameraThread::run()
     int fpsTimeout = 1000 / m_liveviewFps;
 
     while (!m_stop) {
+        /*
         if (time.elapsed() > m_refreshTimeoutMs)
         {
             time.restart();
@@ -165,24 +166,59 @@ void CameraThread::run()
 
             emit cameraStatusAvailable(currentCameraStatus);
 
-        }
-        /*
-        if (m_commandQueue.isEmpty())
-        {
-            m_mutex.lock();
-            m_condition.wait(&m_mutex);
-            m_mutex.unlock();
         }*/
 
-        if (!m_stop && currentCameraStatus.isInLiveView()) {
-            // limit to 25 FPS (1/25 = 0.04)
-            if (previewTime.elapsed() > fpsTimeout) {
-                previewTime.restart();
-                doCapturePreview();
-            } else {
-                m_camera->idle(fpsTimeout - previewTime.elapsed());
+        if (!m_stop && currentCameraStatus.isInLiveView() && previewTime.elapsed() >= fpsTimeout) {
+            previewTime.restart();
+            doCapturePreview();
+        } else if (!m_stop && !m_commandQueue.isEmpty()) {
+            m_mutex.lock();
+            while (!m_commandQueue.isEmpty() && (!currentCameraStatus.isInLiveView() || previewTime.elapsed() < fpsTimeout))
+            {
+                command = m_commandQueue.dequeue();
+                //m_mutex.unlock();
+
+                currentCameraStatus = doCommand(command);
+
+                //m_mutex.lock();
+                m_cameraStatus = currentCameraStatus;
+                //m_mutex.unlock();
+
+                //emit cameraStatusAvailable(m_cameraStatus);
+
+                //m_mutex.lock();
             }
-        } else if (m_commandQueue.isEmpty()) {
+            m_mutex.unlock();
+        } else if (!m_stop && currentCameraStatus.isInLiveView()) {
+            m_mutex.lock();
+            bool statusChanged = m_camera->idle(fpsTimeout - previewTime.elapsed());
+
+            if (statusChanged)
+            {
+                m_cameraStatus = m_camera->status();
+                emit cameraStatusAvailable(m_cameraStatus);
+            }
+
+            m_mutex.unlock();
+        } else {
+            m_mutex.lock();
+            bool statusChanged = m_camera->idle(0);
+
+            if (statusChanged)
+            {
+                m_cameraStatus = m_camera->status();
+                emit cameraStatusAvailable(m_cameraStatus);
+            }
+
+            timeout = m_refreshTimeoutMs - time.elapsed();
+            if (timeout > 0) {
+                m_condition.wait(&m_mutex, timeout);
+            }
+            time.restart();
+
+            m_mutex.unlock();
+        }
+        /*else if (m_commandQueue.isEmpty()) {
             timeout = m_refreshTimeoutMs - time.elapsed();
             if (timeout > 0) {
                 m_mutex.lock();
@@ -211,7 +247,7 @@ void CameraThread::run()
             m_mutex.unlock();
         } else {
             m_mutex.unlock();
-        }
+        }*/
     }
 
     shutdown();

@@ -37,11 +37,15 @@ private:
     QByteArray m_body;
 
     bool m_singlePreview = false;
+    bool m_allBytesWritten = true;
 signals:
 
 public slots:
     void previewAvailable(hpis::CameraPreview cameraPreview);
+    void cameraStatusAvailable(hpis::CameraStatus cameraStatus);
+
     void webSocketDisconnected();
+    void onAllBytesWritten();
 };
 
 }
