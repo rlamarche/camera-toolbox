@@ -428,57 +428,9 @@ bool GPCamera::capturePhoto()
 
 /////////////////////////////////// Camera live view
 
-bool GPCamera::startLiveView()
-{
-    int ret = gpSetToggleWidget(viewfinderWidgetName(), 1);
-    if (ret == GP_OK)
-    {
-        m_isInLiveView = true;
-        readCameraSettings();
-        return true;
-    } else {
-        return false;
-    }
-}
-
-bool GPCamera::stopLiveView()
-{
-    int ret = gpSetToggleWidget(viewfinderWidgetName(), 0);
-    if (ret == GP_OK)
-    {
-        m_isInLiveView = false;
-        readCameraSettings();
-        return true;
-    } else {
-        return false;
-    }
-}
-
 bool GPCamera::isInLiveView()
 {
     return m_isInLiveView;
-}
-
-bool GPCamera::readCameraSettings()
-{
-    gpReadCaptureMode();
-    gpReadExposureMode();
-    gpReadAperture();
-    gpReadShutterSpeed();
-    gpReadIso();
-    gpReadLvZoomRatio();
-    gpReadRecordingMedia();
-    gpReadCaptureTarget();
-    gpReadStillCaptureMode();
-    gpReadExposurePreview();
-    gpReadIsoAuto();
-    gpReadViewFinder();
-    gpReadProgramShiftValue();
-    gpReadExposureCompensation();
-    m_focusMode = gpReadRadioWidget(focusModeWidgetName(), m_focusModes);
-    m_focusMetering = gpReadRadioWidget(focusMeteringWidgetName(), m_focusMeterings);
-
-    return true;
 }
 
 bool GPCamera::gpReadExposureMode()

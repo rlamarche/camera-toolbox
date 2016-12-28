@@ -133,7 +133,33 @@ bool GPNikonCamera::capturePreview(CameraPreview& cameraPreview)
 }
 
 
+/////////////////////////////////// Camera live view
 
+bool GPNikonCamera::startLiveView()
+{
+    int ret = gpSetToggleWidget(viewfinderWidgetName(), 1);
+    if (ret == GP_OK)
+    {
+        m_isInLiveView = true;
+        readCameraSettings();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool GPNikonCamera::stopLiveView()
+{
+    int ret = gpSetToggleWidget(viewfinderWidgetName(), 0);
+    if (ret == GP_OK)
+    {
+        m_isInLiveView = false;
+        readCameraSettings();
+        return true;
+    } else {
+        return false;
+    }
+}
 
 
 // -------------------------- Custom read methods

@@ -51,7 +51,7 @@ public:
     // Init / Shutdown / Read
     virtual bool init();
     virtual void shutdown();
-    virtual bool readCameraSettings();
+    virtual bool readCameraSettings() = 0;
 
     // Capture photo
     bool capturePhoto();
@@ -67,8 +67,6 @@ public:
 
     // Live view
     bool capturePreview(CameraPreview& cameraPreview);
-    bool startLiveView();
-    bool stopLiveView();
     bool isInLiveView();
 
     // Capture mode

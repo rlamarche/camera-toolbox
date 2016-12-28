@@ -20,6 +20,9 @@ public:
     void shutdown();
     bool readCameraSettings();
 
+    bool startLiveView();
+    bool stopLiveView();
+
     bool capturePreview(CameraPreview& cameraPreview);
 
 protected:
