@@ -174,12 +174,17 @@ bool lookupCamera(hpis::Camera** camera) {
 
     QString modelNameStr(modelName);
 
-    if (modelNameStr == "Nikon")
+    if (modelNameStr.startsWith("Nikon"))
     {
         *camera = new hpis::GPNikonCamera(modelNameStr, QString(portName));
     }
-    else if (modelNameStr == "Canon")
+    else if (modelNameStr.startsWith("Canon"))
     {
+        *camera = new hpis::GPCanonCamera(modelNameStr, QString(portName));
+    }
+    else
+    {
+        qInfo() << "Force model to canon";
         *camera = new hpis::GPCanonCamera(modelNameStr, QString(portName));
     }
 
