@@ -28,6 +28,52 @@ QSet<GPCamera::CameraCapability> GPNikonCamera::capabilities()
     return capabilities;
 }
 
+// Init / Shutdown / Read settings
+
+bool GPNikonCamera::init()
+{
+    bool success = GPCamera::init();
+
+    if (success)
+    {
+        setRecordingMedia(RecordingMediaCard);
+        setCaptureTarget(CaptureTargetCard);
+        setStillCaptureMode(StillCaptureModeSingleShot);
+    }
+    else
+    {
+        return false;
+    }
+}
+
+void GPNikonCamera::shutdown()
+{
+    GPCamera::shutdown();
+}
+
+bool GPNikonCamera::readCameraSettings()
+{
+    gpReadCaptureMode();
+    gpReadExposureMode();
+    gpReadAperture();
+    gpReadShutterSpeed();
+    gpReadIso();
+    gpReadLvZoomRatio();
+    gpReadRecordingMedia();
+    gpReadCaptureTarget();
+    gpReadStillCaptureMode();
+    gpReadExposurePreview();
+    gpReadIsoAuto();
+    gpReadViewFinder();
+    gpReadProgramShiftValue();
+    gpReadExposureCompensation();
+    m_focusMode = gpReadRadioWidget(focusModeWidgetName(), m_focusModes);
+    m_focusMetering = gpReadRadioWidget(focusMeteringWidgetName(), m_focusMeterings);
+
+    return true;
+}
+
+
 
 
 // -------------------------- Capture preview
@@ -355,6 +401,11 @@ QString GPNikonCamera::isoWidgetName()
 QString GPNikonCamera::isoAutoWidgetName()
 {
     return "autoiso"; // d054
+}
+
+QString GPNikonCamera::stillCaptureModeWidgetName()
+{
+    return "capturemode"; // canon is "drivemode"
 }
 
 QString GPNikonCamera::exposureModeWidgetName()

@@ -48,7 +48,7 @@ public:
     };
 
     explicit Camera(QObject *parent = 0);
-    virtual ~Camera() {};
+    virtual ~Camera() {}
 
     // Idle time
     virtual bool idle(int timeout) = 0;
@@ -156,6 +156,10 @@ public:
     virtual bool increaseExposureCompensation() = 0;
     virtual bool decreaseExposureCompensation() = 0;
 
+    // Camera Files
+    virtual QStringList listFiles() = 0;
+
+    // Camera Status / Info
     CameraStatus status();
     CameraInfo info();
 signals:

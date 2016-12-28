@@ -15,7 +15,16 @@ class GPNikonCamera : public GPCamera
 public:
     explicit GPNikonCamera(QString cameraModel, QString cameraPort, QObject *parent = 0);
     virtual QSet<CameraCapability> capabilities();
+
+    // Init / Shutdown / Read
+    bool init();
+    void shutdown();
+    bool readCameraSettings();
+
+
+
     bool capturePreview(CameraPreview& cameraPreview);
+
 
 protected:
     // ---------- Read
@@ -25,32 +34,34 @@ protected:
     virtual bool gpReadExposurePreview();
 
     // ---------- Get / Set
-    virtual bool setCaptureMode(CaptureMode captureMode);
-    virtual bool setIsoAuto(bool isoAuto);
+    bool setCaptureMode(CaptureMode captureMode);
+    bool setIsoAuto(bool isoAuto);
 
-    virtual bool increaseLvZoomRatio();
-    virtual bool decreaseLvZoomRatio();
+    bool increaseLvZoomRatio();
+    bool decreaseLvZoomRatio();
 
     // Exposure preview
-    virtual bool setExposurePreview(bool exposurePreview);
+    bool setExposurePreview(bool exposurePreview);
 
     // ---------- Widget names
-    virtual QString viewfinderWidgetName();
-    virtual QString apertureWidgetName();
-    virtual QString shutterSpeedWidgetName();
-    virtual QString isoWidgetName();
+    QString viewfinderWidgetName();
+    QString apertureWidgetName();
+    QString shutterSpeedWidgetName();
+    QString isoWidgetName();
 
-    virtual QString exposurePreviewWidgetName();
+    QString exposurePreviewWidgetName();
 
-    virtual QString exposureModeWidgetName();
-    virtual QString captureModeWidgetName();
-    virtual QString liveviewSelectorWidgetName();
-    virtual QString focusModeWidgetName();
-    virtual QString focusMeteringWidgetName();
-    virtual QString lvZoomRatioWidgetName();
-    virtual QString isoAutoWidgetName();
+    QString exposureModeWidgetName();
+    QString captureModeWidgetName();
+    QString liveviewSelectorWidgetName();
+    QString focusModeWidgetName();
+    QString focusMeteringWidgetName();
+    QString lvZoomRatioWidgetName();
+    QString isoAutoWidgetName();
 
-    virtual QString exposureCompensationWidgetName();
+    QString stillCaptureModeWidgetName();
+
+    QString exposureCompensationWidgetName();
 signals:
 
 public slots:

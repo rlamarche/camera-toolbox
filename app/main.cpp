@@ -35,6 +35,7 @@
 #include <assert.h>
 
 #include "gphoto/nikon/gpnikoncamera.h"
+#include "gphoto/canon/gpcanoncamera.h"
 
 #ifdef USE_RPI
 #include "hello_jpeg_v2/Logger.h"
@@ -171,7 +172,17 @@ bool lookupCamera(hpis::Camera** camera) {
     gp_list_get_name  (cameraList, 0, &modelName);
     gp_list_get_value (cameraList, 0, &portName);
 
-    *camera = new hpis::GPNikonCamera(QString(modelName), QString(portName));
+    QString modelNameStr(modelName);
+
+    if (modelNameStr == "Nikon")
+    {
+        *camera = new hpis::GPNikonCamera(modelNameStr, QString(portName));
+    }
+    else if (modelNameStr == "Canon")
+    {
+        *camera = new hpis::GPCanonCamera(modelNameStr, QString(portName));
+    }
+
 
     gp_context_unref(context);
     return true;

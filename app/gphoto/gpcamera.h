@@ -49,9 +49,9 @@ public:
     bool idle(int timeout);
 
     // Init / Shutdown / Read
-    bool init();
-    void shutdown();
-    bool readCameraSettings();
+    virtual bool init();
+    virtual void shutdown();
+    virtual bool readCameraSettings();
 
     // Capture photo
     bool capturePhoto();
@@ -72,7 +72,7 @@ public:
     bool isInLiveView();
 
     // Capture mode
-    virtual bool setCaptureMode(CaptureMode captureMode) = 0;
+    virtual bool setCaptureMode(CaptureMode captureMode) { return false; }
     CaptureMode captureMode();
 
     // Recording media
@@ -88,7 +88,7 @@ public:
     QString stillCaptureMode();
 
     // Exposure preview
-    virtual bool setExposurePreview(bool exposurePreview) = 0;
+    virtual bool setExposurePreview(bool exposurePreview) { return false; }
     virtual bool exposurePreview();
 
     // Aperture
@@ -107,7 +107,7 @@ public:
 
     // ISO Auto
     bool isoAuto();
-    virtual bool setIsoAuto(bool isoAuto) = 0;
+    virtual bool setIsoAuto(bool isoAuto) { return false; }
 
     // ISO
     QStringList isos();
@@ -139,8 +139,8 @@ public:
 
     // Live view zoom ratio
     QString lvZoomRatio();
-    virtual bool increaseLvZoomRatio() = 0;
-    virtual bool decreaseLvZoomRatio() = 0;
+    virtual bool increaseLvZoomRatio() { return false; }
+    virtual bool decreaseLvZoomRatio() { return false; }
 
 
     // Program shift value
@@ -155,6 +155,9 @@ public:
     QString exposureCompensation();
     bool increaseExposureCompensation();
     bool decreaseExposureCompensation();
+
+    QStringList listFilesInFolder(QString folder);
+    QStringList listFiles();
 
 protected:
     void reportError(QString error);
@@ -182,13 +185,13 @@ protected:
     virtual QString manufacturerWidgetName();
     virtual QString cameraModelWidgetName();
 
-    virtual QString viewfinderWidgetName() = 0;
+    virtual QString viewfinderWidgetName() { return QString(); }
 
     virtual QString apertureWidgetName();
     virtual QString shutterSpeedWidgetName();
     virtual QString isoWidgetName();
 
-    virtual QString exposureModeWidgetName() = 0;
+    virtual QString exposureModeWidgetName() { return QString(); }
 
     virtual QString afAreaWidgetName();
     virtual QString afDriveWidgetName();
@@ -196,7 +199,7 @@ protected:
     virtual QString recordingMediaWidgetName();
     virtual QString captureTargetWidgetName();
 
-    virtual QString stillCaptureModeWidgetName();
+    virtual QString stillCaptureModeWidgetName() { return QString(); }
 
     virtual QString exposureCompensationWidgetName();
 
@@ -207,7 +210,7 @@ protected:
 
     virtual QString exposureIndicatorWidgetName();
 
-    virtual bool gpReadCaptureMode() = 0;
+    virtual bool gpReadCaptureMode() { return false; }
 
     virtual bool gpReadExposureMode();
 
@@ -217,9 +220,9 @@ protected:
 
     virtual bool gpReadIso();
 
-    virtual bool gpReadIsoAuto() = 0;
+    virtual bool gpReadIsoAuto() { return false; }
 
-    virtual bool gpReadLvZoomRatio() = 0;
+    virtual bool gpReadLvZoomRatio() { return false; }
 
     virtual bool gpReadRecordingMedia();
 
@@ -227,7 +230,7 @@ protected:
 
     virtual bool gpReadStillCaptureMode();
 
-    virtual bool gpReadExposurePreview() = 0;
+    virtual bool gpReadExposurePreview() { return false; }
 
     virtual bool gpReadViewFinder();
 

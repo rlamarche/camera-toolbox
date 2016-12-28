@@ -28,7 +28,9 @@ SOURCES += \
     camerainfo.cpp \
     camerasettings.cpp \
     gphoto/nikon/gpnikoncamera.cpp \
-    camerafile.cpp
+    gphoto/canon/gpcanoncamera.cpp \
+    camerafile.cpp \
+#    mock/mockcamera.cpp
 
 
 
@@ -48,7 +50,9 @@ HEADERS  += mainwindow.h \
     camerainfo.h \
     camerasettings.h \
     gphoto/nikon/gpnikoncamera.h \
-    camerafile.h
+    gphoto/canon/gpcanoncamera.h \
+    camerafile.h \
+#    mock/mockcamera.h
 
 
 #INCLUDEPATH += ../vendor/libgphoto2 ../vendor/libgphoto2/libgphoto2_port ../vendor/qhttp/src

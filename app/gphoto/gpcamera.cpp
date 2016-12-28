@@ -198,9 +198,6 @@ bool GPCamera::init()
 
     readCameraSettings();
 
-    setRecordingMedia(RecordingMediaCard);
-    setCaptureTarget(CaptureTargetCard);
-    setStillCaptureMode(StillCaptureModeSingleShot);
     //gpSetRangeWidget("burstnumber", 1);
 
     m_isInLiveView = false;
@@ -1036,11 +1033,6 @@ QString GPCamera::manufacturerWidgetName()
     return "manufacturer";
 }
 
-QString GPCamera::stillCaptureModeWidgetName()
-{
-    return "capturemode"; // canon drivemode
-}
-
 QString GPCamera::cameraModelWidgetName()
 {
     return "cameramodel";
@@ -1048,8 +1040,7 @@ QString GPCamera::cameraModelWidgetName()
 
 QString GPCamera::apertureWidgetName()
 {
-    // TODO check value for canon
-    return "f-number";
+    return "aperture"; // valid for canon
 }
 
 QString GPCamera::shutterSpeedWidgetName()
@@ -1720,6 +1711,105 @@ bool GPCamera::decreaseExposureCompensation()
         return false;
     }
 }
+
+
+QStringList GPCamera::listFilesInFolder(QString folder)
+{
+    QStringList list;
+    CameraList* cameraList;
+    const char* name;
+    const char* value;
+
+    gp_list_new(&cameraList);
+
+    int ret = gp_camera_folder_list_folders(m_camera, folder.toStdString().c_str(), cameraList, m_context);
+    if (ret != GP_OK)
+    {
+        reportError(QString("Unable to list folders in folder %1: %2").arg(folder, errorCodeToString(ret)));
+        gp_list_free(cameraList);
+        return list;
+    }
+
+    int count = gp_list_count(cameraList);
+    if (count < GP_OK)
+    {
+        reportError(QString("Unable to list folders in folder %1: %2").arg(folder, errorCodeToString(ret)));
+        gp_list_free(cameraList);
+        return list;
+    }
+
+    for (int i = 0; i < count; ++i)
+    {
+        gp_list_get_name(cameraList, i, &name);
+        gp_list_get_value(cameraList, i, &value);
+
+        QString subFolder = QString(name);
+
+        if (folder.endsWith("/"))
+        {
+            subFolder = folder + subFolder;
+        } else {
+            subFolder = folder + "/" + subFolder;
+        }
+
+        QStringList subList = listFilesInFolder(subFolder);
+        for (int j = 0; j < subList.size(); ++j)
+        {
+            list.append(subList.at(j));
+        }
+
+    }
+
+    gp_list_free(cameraList);
+
+    gp_list_new(&cameraList);
+
+    ret = gp_camera_folder_list_files(m_camera, folder.toStdString().c_str(), cameraList, m_context);
+    if (ret != GP_OK)
+    {
+        reportError(QString("Unable to list files in folder %1: %2").arg(folder, errorCodeToString(ret)));
+        gp_list_free(cameraList);
+        return list;
+    }
+
+    count = gp_list_count(cameraList);
+    if (count < GP_OK)
+    {
+        reportError(QString("Unable to list folders in folder %1: %2").arg(folder, errorCodeToString(ret)));
+        gp_list_free(cameraList);
+        return list;
+    }
+
+    for (int i = 0; i < count; ++i)
+    {
+        gp_list_get_name(cameraList, i, &name);
+        gp_list_get_value(cameraList, i, &value);
+
+        QString path = QString(name);
+        if (folder.endsWith("/"))
+        {
+            path = folder + path;
+        } else {
+            path = folder + "/" + path;
+        }
+
+        list.append(path);
+    }
+
+
+    gp_list_free(cameraList);
+
+    return list;
+}
+
+QStringList GPCamera::listFiles()
+{
+    QStringList list = listFilesInFolder("/");
+    qDebug() << list;
+
+    return list;
+}
+
 
 // GPhoto
 
