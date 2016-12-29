@@ -205,14 +205,16 @@ bool GPCamera::init()
 
     ret = gpGetTextWidgetValue(manufacturerWidgetName(), m_manufacturer);
     if (ret < GP_OK) {
+        m_manufacturer = "Unknown";
         reportError(QString("Unable to get manufacturer widget : %1").arg(errorCodeToString(ret)));
-        return false;
+        //return false;
     }
 
     ret = gpGetTextWidgetValue(cameraModelWidgetName(), m_cameraModel);
     if (ret < GP_OK) {
         reportError(QString("Unable to get camera model widget : %1").arg(errorCodeToString(ret)));
-        return false;
+        m_cameraModel = m_model;
+        //return false;
     }
 
     return true;
