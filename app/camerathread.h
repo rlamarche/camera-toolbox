@@ -80,6 +80,7 @@ public:
         static Command setProperty(QString propertyName, QVariant value);
 
         CommandType type();
+        QString typeName();
         int x();
         int y();
         QVariant value();

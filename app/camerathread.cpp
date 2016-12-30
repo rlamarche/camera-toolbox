@@ -73,6 +73,131 @@ CameraThread::CommandType CameraThread::Command::type()
     return m_commandType;
 }
 
+QString CameraThread::Command::typeName()
+{
+    QString commandName;
+
+    switch (m_commandType) {
+    case CommandStartLiveview:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandStopLiveview:
+        commandName = "CommandStartLiveview";
+        break;
+    case CommandToggleLiveview:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandIncreaseAperture:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandDecreaseAperture:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandEnableIsoAuto:
+        commandName = "CommandStartLiveview";
+        break;
+    case CommandDisableIsoAuto:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandIncreaseShutterSpeed:
+        commandName = "CommandStartLiveview";
+        break;
+    case CommandDecreaseShutterSpeed:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandSetIso:
+        commandName = "CommandStartLiveview";
+        break;
+    case CommandIncreaseIso:
+        commandName = "CommandStartLiveview";
+        break;
+    case CommandDecreaseIso:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandIncreaseProgramShiftValue:
+        commandName = "CommandStartLiveview";
+        break;
+    case CommandDecreaseProgramShiftValue:
+        commandName = "CommandStartLiveview";
+        break;
+
+
+    case CommandIncreaseExposureCompensation:
+        commandName = "CommandStartLiveview";
+        break;
+    case CommandDecreaseExposureCompensation:
+        commandName = "CommandStartLiveview";
+        break;
+
+
+    case CommandExposureModePlus:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandExposureModeMinus:
+        commandName = "CommandStartLiveview";
+        break;
+    case CommandIncreaseLvZoomRatio:
+        commandName = "CommandStartLiveview";
+        break;
+    case CommandDecreaseLvZoomRatio:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandEnableExposurePreview:
+        commandName = "CommandStartLiveview";
+        break;
+    case CommandDisableExposurePreview:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandStartStopMovie:
+        commandName = "CommandStartLiveview";
+        break;
+    case CommandStartMovie:
+        commandName = "CommandStartLiveview";
+        break;
+    case CommandStopMovie:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandCapturePhoto:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandChangeAfArea:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandPhotoMode:
+        commandName = "CommandStartLiveview";
+        break;
+    case CommandVideoMode:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandAfDrive:
+        commandName = "CommandStartLiveview";
+        break;
+
+    case CommandSetProperty:
+        commandName = "CommandStartLiveview";
+        break;
+    default:
+        commandName = QString("Command %1").arg(m_commandType);
+        break;
+    }
+
+    return commandName;
+}
+
 CameraThread::Command CameraThread::Command::changeAfArea(int x, int y)
 {
     Command command(CameraThread::CommandChangeAfArea);
@@ -496,7 +621,7 @@ CameraStatus CameraThread::doCommand(Command command) const
 
     if (!success)
     {
-        qInfo() << "Command failed";
+        qInfo() << "Command failed: " << command.typeName();
     }
 
     return m_camera->status();
