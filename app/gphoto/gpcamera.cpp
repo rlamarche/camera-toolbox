@@ -249,7 +249,12 @@ bool GPCamera::capturePreview(CameraPreview& cameraPreview)
     const char *dataPtr;
     long unsigned int dataSize;
 
-    gp_file_get_data_and_size(file, &dataPtr, &dataSize);
+    ret = gp_file_get_data_and_size(file, &dataPtr, &dataSize);
+    if (ret < GP_OK) {
+        reportError(QString("Unable to get preview data: %1").arg(errorCodeToString(ret)));
+        gp_file_free(file);
+        return false;
+    }
 
     unsigned char *data, *jpgStartPtr = NULL, *jpgEndPtr = NULL;
     uint32_t size;
