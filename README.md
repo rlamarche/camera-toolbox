@@ -108,21 +108,26 @@ If you installed these packages after rsyncing the sysroot, rerun the resync com
 In this repo, run : 
 
 ```
+# Required
 git submodule init
 git submodule update
 
+# Optional only if you want to build / debug latest version of libgphoto2
 cd vendor/libgphoto2
 autoreconf --install --symlink
 CFLAGS="--sysroot /path/to/sysroot" PATH="$PATH:/path/to/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/" ./configure --host=arm-linux-gnueabihf
 cd ../../
 
+# Required
 cd vendor/qhttp
 ./update-dependencies.sh
 cd ../../
 
-<path to qt5 raspberry pi qmake>/qmake
+<path to qmake>/qmake
 make
 ```
+
+*Optional : installation*
 
 Create folder `/home/pi` with write access from your current user then run :
 
